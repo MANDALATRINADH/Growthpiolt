@@ -1,0 +1,25 @@
+{
+  "name": "growthpilot",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000G\u0000r\u0000o\u0000w\u0000t\u0000h\u0000P\u0000i\u0000l\u0000o\u0000t\u0000\r\u0000 \u0000#\u0000 \u0000G\u0000r\u0000o\u0000w\u0000t\u0000h\u0000P\u0000i\u0000l\u0000o\u0000t\u0000\r\u0000 \u0000#\u0000 \u0000G\u0000r\u0000o\u0000w\u0000t\u0000h\u0000p\u0000i\u0000o\u0000l\u0000t\u0000\r\u0000 \u0000",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MANDALATRINADH/Growthpiolt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MANDALATRINADH/Growthpiolt/issues"
+  },
+  "homepage": "https://github.com/MANDALATRINADH/Growthpiolt#readme",
+  "dependencies": {
+    "@vercel/node": "^5.7.15",
+    "razorpay": "^2.9.6",
+    "stripe": "^22.1.0"
+  }
+}

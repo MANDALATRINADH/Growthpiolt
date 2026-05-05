@@ -1,6 +1,152 @@
 // ============ GOOGLE CLIENT ID ============
-// IMPORTANT: Replace with your actual Google Client ID from Google Cloud Console
 const GOOGLE_CLIENT_ID = '956139573371-kk1o33j2kcfrri7mgmh4p64ojh3jkfjd.apps.googleusercontent.com';
+
+// ============ RAZORPAY PAYMENT INTEGRATION ============
+const RAZORPAY_KEY_ID = 'rzp_test_Sli38TkEX0wcaC';
+
+async function initiateRazorpayPayment(amount, planType, planName) {
+    if (!currentUser) {
+        showToast('Please login first to make a payment', 'error');
+        return;
+    }
+    
+    showToast('Creating payment order...', 'info');
+    
+    try {
+        const orderResponse = await fetch('/api/create-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: amount,
+                currency: 'INR',
+                receipt: `receipt_${planType}_${Date.now()}`
+            })
+        });
+        
+        const orderData = await orderResponse.json();
+        
+        if (!orderData.success) {
+            throw new Error(orderData.error || 'Failed to create order');
+        }
+        
+        const options = {
+            key: RAZORPAY_KEY_ID,
+            amount: orderData.amount,
+            currency: orderData.currency,
+            name: 'GrowthPilot',
+            description: planName,
+            image: 'https://growthpiolt-a24j.vercel.app/logo.png',
+            order_id: orderData.order_id,
+            prefill: {
+                name: currentUser.name,
+                email: currentUser.email,
+                contact: ''
+            },
+            notes: { planType: planType, userId: currentUser.email },
+            theme: { color: '#4f46e5' },
+            modal: { ondismiss: function() { showToast('Payment cancelled', 'info'); } },
+            handler: function(response) {
+                verifyAndCompletePayment(
+                    response.razorpay_payment_id,
+                    response.razorpay_order_id,
+                    response.razorpay_signature,
+                    planType,
+                    orderData.amount
+                );
+            }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.open();
+        
+    } catch (error) {
+        console.error('Payment initiation error:', error);
+        showToast(error.message || 'Failed to initiate payment. Please try again.', 'error');
+    }
+}
+
+async function verifyAndCompletePayment(paymentId, orderId, signature, planType, amount) {
+    showToast('Verifying payment...', 'info');
+    
+    try {
+        const verifyResponse = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                razorpay_payment_id: paymentId,
+                razorpay_order_id: orderId,
+                razorpay_signature: signature
+            })
+        });
+        
+        const verifyData = await verifyResponse.json();
+        
+        if (verifyData.success) {
+            const amountInRupees = amount / 100;
+            grantPremiumAccess(planType, paymentId);
+            showToast(`✓ Payment successful! ₹${amountInRupees} paid. Premium activated! 🎉`, 'success');
+            setTimeout(() => { location.reload(); }, 2000);
+        } else {
+            showToast('Payment verification failed. Please contact support.', 'error');
+            console.error('Verification failed:', verifyData);
+        }
+    } catch (error) {
+        console.error('Verification error:', error);
+        showToast('Payment verification error. Please contact support.', 'error');
+    }
+}
+
+function grantPremiumAccess(planType, paymentId) {
+    if (!currentUser) return;
+    
+    const premiumData = {
+        isPremium: true,
+        planType: planType,
+        paymentId: paymentId,
+        startDate: new Date().toISOString(),
+        expiryDate: planType === 'monthly' 
+            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+    };
+    
+    localStorage.setItem(`premium_${currentUser.email}`, JSON.stringify(premiumData));
+    
+    if (appData) {
+        appData.isPremium = true;
+        appData.premiumPlan = planType;
+        appData.premiumPaymentId = paymentId;
+        appData.premiumStartDate = premiumData.startDate;
+        appData.premiumExpiryDate = premiumData.expiryDate;
+        saveDataImmediately();
+    }
+    
+    updateUserUI();
+}
+
+function isPremiumUser() {
+    if (!currentUser) return false;
+    
+    const premiumData = localStorage.getItem(`premium_${currentUser.email}`);
+    if (!premiumData) return false;
+    
+    try {
+        const data = JSON.parse(premiumData);
+        if (!data.isPremium) return false;
+        
+        const expiryDate = new Date(data.expiryDate);
+        if (expiryDate < new Date()) {
+            localStorage.removeItem(`premium_${currentUser.email}`);
+            if (appData) {
+                appData.isPremium = false;
+                saveDataImmediately();
+            }
+            return false;
+        }
+        return true;
+    } catch(e) {
+        return false;
+    }
+}
 
 // ============ GLOBAL VARIABLES ============
 let currentUser = null;
@@ -330,19 +476,16 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// ============ REAL GOOGLE LOGIN - Opens Google Consent Screen ============
+// ============ REAL GOOGLE LOGIN ============
 function handleGoogleLogin() {
     if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
         showToast('Please add your Google Client ID in app.js', 'error');
-        console.error('Google Client ID not configured. Get it from https://console.cloud.google.com/apis/credentials');
         return;
     }
     
-    // Create a popup for Google OAuth
     const redirectUri = window.location.origin;
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token&scope=email profile&prompt=select_account`;
     
-    // Open Google's OAuth window
     const width = 500;
     const height = 600;
     const left = (screen.width - width) / 2;
@@ -350,7 +493,6 @@ function handleGoogleLogin() {
     
     const popup = window.open(authUrl, 'Google Login', `width=${width},height=${height},left=${left},top=${top}`);
     
-    // Listen for the redirect
     const interval = setInterval(() => {
         try {
             if (popup.closed) {
@@ -360,7 +502,6 @@ function handleGoogleLogin() {
             
             const popupUrl = popup.location.href;
             if (popupUrl.includes('access_token=')) {
-                // Parse the access token from the URL
                 const hashParams = new URLSearchParams(popupUrl.split('#')[1]);
                 const accessToken = hashParams.get('access_token');
                 
@@ -368,7 +509,6 @@ function handleGoogleLogin() {
                     clearInterval(interval);
                     popup.close();
                     
-                    // Fetch user info using the access token
                     fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
                         headers: { 'Authorization': `Bearer ${accessToken}` }
                     })
@@ -413,9 +553,7 @@ function handleGoogleLogin() {
                     });
                 }
             }
-        } catch(e) {
-            // Cross-origin error, ignore until redirect
-        }
+        } catch(e) {}
     }, 500);
 }
 
@@ -561,6 +699,18 @@ function updateUserUI() {
     document.getElementById('userName').innerText = currentUser.name;
     document.getElementById('userAvatar').innerText = currentUser.name.charAt(0).toUpperCase();
     document.getElementById('welcomeName').innerHTML = `${currentUser.name} 👋`;
+    
+    if (isPremiumUser()) {
+        const userLevelEl = document.getElementById('userLevel');
+        if (userLevelEl) {
+            userLevelEl.innerHTML = '⭐ Premium Member';
+            userLevelEl.className = 'text-xs text-yellow-500';
+        }
+        const avatarEl = document.getElementById('userAvatar');
+        if (avatarEl) {
+            avatarEl.style.background = 'linear-gradient(135deg, #f59e0b, #ef4444)';
+        }
+    }
 }
 
 // ============ READING PASSAGES FUNCTION ============
@@ -1267,3 +1417,5 @@ window.recordReadingSpeed = recordReadingSpeed;
 window.toggleChat = toggleChat;
 window.sendChatMessage = sendChatMessage;
 window.sendFeedback = sendFeedback;
+window.initiateRazorpayPayment = initiateRazorpayPayment;
+window.isPremiumUser = isPremiumUser;
