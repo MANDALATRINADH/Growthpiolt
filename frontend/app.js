@@ -1,5 +1,6 @@
 // ============ GOOGLE CLIENT ID ============
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID_HERE';
+// IMPORTANT: Replace with your actual Google Client ID from Google Cloud Console
+const GOOGLE_CLIENT_ID = '956139573371-kk1o33j2kcfrri7mgmh4p64ojh3jkfjd.apps.googleusercontent.com';
 
 // ============ GLOBAL VARIABLES ============
 let currentUser = null;
@@ -16,7 +17,6 @@ let selectedMood = '';
 
 // ============ 30+ READING PASSAGES (Easy to Hard) ============
 const READING_PASSAGES = [
-    // EASY LEVEL (1-10)
     { text: "The sun is shining brightly today. The birds are singing in the trees. It is a beautiful day to go outside and play.", level: "Easy", difficulty: 1 },
     { text: "I like to read books. Reading helps me learn new things. My favorite books are about animals and nature.", level: "Easy", difficulty: 1 },
     { text: "My family likes to eat dinner together every evening. We talk about our day and share happy moments.", level: "Easy", difficulty: 1 },
@@ -27,37 +27,22 @@ const READING_PASSAGES = [
     { text: "Exercise is good for your body. Running, swimming, and cycling keep you fit and strong.", level: "Easy", difficulty: 1 },
     { text: "The moon shines at night. The stars twinkle in the dark sky. It is a peaceful sight.", level: "Easy", difficulty: 1 },
     { text: "I love eating fresh fruits like apples, bananas, and oranges. They are sweet and healthy.", level: "Easy", difficulty: 1 },
-    
-    // MEDIUM LEVEL (11-25)
-    { text: "Technology has transformed the way we communicate with each other. Smartphones and social media platforms allow us to connect with people across the globe instantly, breaking down geographical barriers and creating a more interconnected world.", level: "Medium", difficulty: 2 },
-    { text: "Artificial intelligence is revolutionizing various industries. From healthcare to transportation, AI systems are helping doctors diagnose diseases, enabling self-driving cars, and personalizing our online experiences.", level: "Medium", difficulty: 2 },
-    { text: "Learning a new language opens doors to different cultures and perspectives. It requires dedication, patience, and consistent practice. The most successful language learners immerse themselves in the language daily.", level: "Medium", difficulty: 2 },
-    { text: "Climate change is one of the most pressing challenges facing humanity. Rising temperatures, extreme weather events, and melting ice caps demand immediate action from governments and individuals alike.", level: "Medium", difficulty: 2 },
-    { text: "Effective communication is a vital skill in both personal and professional life. It involves not only speaking clearly but also listening actively and understanding the emotions behind the words.", level: "Medium", difficulty: 2 },
-    { text: "The human brain is remarkably complex, containing approximately 86 billion neurons. Each neuron can form thousands of connections, creating an intricate network that enables thought, memory, and consciousness.", level: "Medium", difficulty: 2 },
-    { text: "Space exploration has revealed fascinating discoveries about our universe. From the Moon landing to Mars rovers, humanity continues to push the boundaries of what is possible beyond Earth.", level: "Medium", difficulty: 2 },
-    { text: "Meditation and mindfulness practices have been shown to reduce stress, improve focus, and enhance overall well-being. Taking just ten minutes a day can make a significant difference.", level: "Medium", difficulty: 2 },
-    { text: "Renewable energy sources like solar and wind power are becoming increasingly affordable. They offer a sustainable alternative to fossil fuels and help combat air pollution.", level: "Medium", difficulty: 2 },
-    { text: "The art of public speaking combines confidence, preparation, and authentic connection with the audience. Great speakers tell compelling stories that resonate emotionally.", level: "Medium", difficulty: 2 },
-    { text: "Entrepreneurship requires risk-taking, resilience, and creative problem-solving. Successful entrepreneurs learn from failures and adapt quickly to changing market conditions.", level: "Medium", difficulty: 2 },
-    { text: "Digital literacy is essential in today's world. Understanding how to evaluate online information, protect personal data, and use technology responsibly are crucial skills.", level: "Medium", difficulty: 2 },
-    { text: "Teamwork and collaboration drive innovation in the workplace. Diverse teams bring different perspectives, leading to more creative solutions and better decision-making.", level: "Medium", difficulty: 2 },
-    { text: "Time management is key to productivity. Prioritizing tasks, setting goals, and avoiding distractions help individuals accomplish more in less time.", level: "Medium", difficulty: 2 },
-    { text: "Emotional intelligence involves recognizing and managing your own emotions while understanding others' feelings. It is a predictor of success in relationships and careers.", level: "Medium", difficulty: 2 },
-    
-    // HARD LEVEL (26-35)
-    { text: "The rapid advancement of quantum computing promises to revolutionize fields such as cryptography, drug discovery, and climate modeling. Unlike classical computers that use bits, quantum computers leverage qubits, which can exist in multiple states simultaneously, enabling them to solve complex problems exponentially faster than traditional systems.", level: "Hard", difficulty: 3 },
-    { text: "Neuroscience has revealed that neuroplasticity—the brain's ability to reorganize itself by forming new neural connections—continues throughout life. This discovery has profound implications for rehabilitation after injury, treatment of mental health conditions, and lifelong learning capabilities.", level: "Hard", difficulty: 3 },
-    { text: "The philosophical concept of consciousness remains one of science's greatest mysteries. While we can observe neural correlates of conscious experience, explaining why and how subjective awareness arises from physical matter is known as the 'hard problem' of consciousness.", level: "Hard", difficulty: 3 },
-    { text: "Blockchain technology extends beyond cryptocurrency applications. Its decentralized, immutable ledger system offers potential solutions for supply chain transparency, digital identity verification, smart contracts, and secure voting systems.", level: "Hard", difficulty: 3 },
-    { text: "Epigenetics reveals how environmental factors can influence gene expression without changing DNA sequences. These modifications can be inherited across generations, suggesting that our lifestyle choices may affect not only our health but potentially that of our descendants.", level: "Hard", difficulty: 3 },
-    { text: "The theory of evolution by natural selection, first articulated by Charles Darwin, explains the diversity of life on Earth. Through variation, inheritance, and differential survival, species gradually adapt to their environments over generations.", level: "Hard", difficulty: 3 },
-    { text: "Cognitive biases are systematic patterns of deviation from rational judgment. Understanding biases like confirmation bias, anchoring effect, and availability heuristic can help individuals make more objective decisions and avoid common logical pitfalls.", level: "Hard", difficulty: 3 },
-    { text: "The global economy faces complex challenges including income inequality, automation's impact on employment, and sustainable development. Addressing these issues requires coordinated policy responses and innovative economic models.", level: "Hard", difficulty: 3 },
-    { text: "Particle physics explores the fundamental constituents of matter and energy. The Standard Model describes twelve elementary particles and four fundamental forces, though dark matter and dark energy remain unexplained.", level: "Hard", difficulty: 3 },
-    { text: "The intersection of ethics and artificial intelligence raises important questions about algorithmic bias, autonomous decision-making, and the future of human work. Developing ethical AI frameworks is crucial for responsible technological advancement.", level: "Hard", difficulty: 3 },
-    { text: "Nanotechnology involves manipulating matter at the atomic and molecular scale. This field has applications in medicine, electronics, and materials science, enabling breakthroughs like targeted drug delivery and ultra-strong materials.", level: "Hard", difficulty: 3 },
-    { text: "Behavioral economics integrates insights from psychology into economic theory, challenging the assumption of perfectly rational actors. Concepts like loss aversion, framing effects, and hyperbolic discounting explain seemingly irrational economic decisions.", level: "Hard", difficulty: 3 }
+    { text: "Technology has transformed the way we communicate with each other. Smartphones and social media platforms allow us to connect with people across the globe instantly.", level: "Medium", difficulty: 2 },
+    { text: "Artificial intelligence is revolutionizing various industries. From healthcare to transportation, AI systems are helping doctors diagnose diseases and enabling self-driving cars.", level: "Medium", difficulty: 2 },
+    { text: "Learning a new language opens doors to different cultures and perspectives. It requires dedication, patience, and consistent practice.", level: "Medium", difficulty: 2 },
+    { text: "Climate change is one of the most pressing challenges facing humanity. Rising temperatures and extreme weather events demand immediate action.", level: "Medium", difficulty: 2 },
+    { text: "Effective communication is a vital skill in both personal and professional life. It involves speaking clearly and listening actively.", level: "Medium", difficulty: 2 },
+    { text: "The human brain is remarkably complex, containing approximately 86 billion neurons that enable thought, memory, and consciousness.", level: "Medium", difficulty: 2 },
+    { text: "Space exploration has revealed fascinating discoveries about our universe. From the Moon landing to Mars rovers, humanity continues to push boundaries.", level: "Medium", difficulty: 2 },
+    { text: "Meditation and mindfulness practices have been shown to reduce stress, improve focus, and enhance overall well-being.", level: "Medium", difficulty: 2 },
+    { text: "Renewable energy sources like solar and wind power are becoming increasingly affordable and offer a sustainable alternative to fossil fuels.", level: "Medium", difficulty: 2 },
+    { text: "The art of public speaking combines confidence, preparation, and authentic connection with the audience. Great speakers tell compelling stories.", level: "Medium", difficulty: 2 },
+    { text: "The rapid advancement of quantum computing promises to revolutionize fields such as cryptography, drug discovery, and climate modeling.", level: "Hard", difficulty: 3 },
+    { text: "Neuroscience has revealed that neuroplasticity—the brain's ability to reorganize itself—continues throughout life, enabling lifelong learning.", level: "Hard", difficulty: 3 },
+    { text: "Blockchain technology extends beyond cryptocurrency applications, offering solutions for supply chain transparency and digital identity verification.", level: "Hard", difficulty: 3 },
+    { text: "Epigenetics reveals how environmental factors can influence gene expression without changing DNA sequences, affecting health across generations.", level: "Hard", difficulty: 3 },
+    { text: "The theory of evolution by natural selection explains the diversity of life on Earth through variation, inheritance, and differential survival.", level: "Hard", difficulty: 3 },
+    { text: "Cognitive biases are systematic patterns of deviation from rational judgment that can help individuals make more objective decisions.", level: "Hard", difficulty: 3 }
 ];
 
 // ============ TONGUE TWISTERS ============
@@ -345,48 +330,93 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// ============ GOOGLE LOGIN ============
+// ============ REAL GOOGLE LOGIN - Opens Google Consent Screen ============
 function handleGoogleLogin() {
     if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
-        const email = prompt("Enter your Gmail address:", "yourname@gmail.com");
-        if (!email) return;
-        if (!email.endsWith('@gmail.com')) {
-            showToast('Please enter a valid Gmail address', 'error');
-            return;
-        }
-        const name = prompt("Enter your name:", email.split('@')[0]);
-        if (!name) return;
-        
-        let users = JSON.parse(localStorage.getItem('growthpilot_users') || '{}');
-        users[email] = { name, email, password: 'google_' + Date.now() };
-        localStorage.setItem('growthpilot_users', JSON.stringify(users));
-        
-        currentUser = { email, name };
-        localStorage.setItem('growthpilot_current_user', JSON.stringify(currentUser));
-        
-        showToast(`Welcome ${name}! 🎉`);
-        document.getElementById('authPage').style.display = 'none';
-        document.getElementById('dashboardPage').style.display = 'block';
-        document.getElementById('mainFooter').style.display = 'block';
-        
-        appData = getDefaultData();
-        saveDataImmediately();
-        updateUserUI();
-        updateDashboard();
-        renderRoadmap();
-        renderHabits();
-        renderScheduleUI();
-        renderNotes();
-        renderJournals();
-        newReadingPassage();
-        renderCurrentTwister();
-        updateTwisterStats();
-        renderTwisterList();
-        initAnalytics();
-        renderFeedbackList();
-    } else {
-        window.location.href = `https://accounts.google.com/o/oauth2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${window.location.origin}&response_type=token&scope=email profile`;
+        showToast('Please add your Google Client ID in app.js', 'error');
+        console.error('Google Client ID not configured. Get it from https://console.cloud.google.com/apis/credentials');
+        return;
     }
+    
+    // Create a popup for Google OAuth
+    const redirectUri = window.location.origin;
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token&scope=email profile&prompt=select_account`;
+    
+    // Open Google's OAuth window
+    const width = 500;
+    const height = 600;
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+    
+    const popup = window.open(authUrl, 'Google Login', `width=${width},height=${height},left=${left},top=${top}`);
+    
+    // Listen for the redirect
+    const interval = setInterval(() => {
+        try {
+            if (popup.closed) {
+                clearInterval(interval);
+                return;
+            }
+            
+            const popupUrl = popup.location.href;
+            if (popupUrl.includes('access_token=')) {
+                // Parse the access token from the URL
+                const hashParams = new URLSearchParams(popupUrl.split('#')[1]);
+                const accessToken = hashParams.get('access_token');
+                
+                if (accessToken) {
+                    clearInterval(interval);
+                    popup.close();
+                    
+                    // Fetch user info using the access token
+                    fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    })
+                    .then(response => response.json())
+                    .then(userInfo => {
+                        const email = userInfo.email;
+                        const name = userInfo.name;
+                        
+                        let users = JSON.parse(localStorage.getItem('growthpilot_users') || '{}');
+                        if (!users[email]) {
+                            users[email] = { name, email, password: 'google_' + userInfo.id };
+                            localStorage.setItem('growthpilot_users', JSON.stringify(users));
+                        }
+                        
+                        currentUser = { email, name };
+                        localStorage.setItem('growthpilot_current_user', JSON.stringify(currentUser));
+                        
+                        showToast(`Welcome ${name}! 🎉`);
+                        document.getElementById('authPage').style.display = 'none';
+                        document.getElementById('dashboardPage').style.display = 'block';
+                        document.getElementById('mainFooter').style.display = 'block';
+                        
+                        appData = getDefaultData();
+                        saveDataImmediately();
+                        updateUserUI();
+                        updateDashboard();
+                        renderRoadmap();
+                        renderHabits();
+                        renderScheduleUI();
+                        renderNotes();
+                        renderJournals();
+                        newReadingPassage();
+                        renderCurrentTwister();
+                        updateTwisterStats();
+                        renderTwisterList();
+                        initAnalytics();
+                        renderFeedbackList();
+                    })
+                    .catch(error => {
+                        showToast('Failed to get user info', 'error');
+                        console.error(error);
+                    });
+                }
+            }
+        } catch(e) {
+            // Cross-origin error, ignore until redirect
+        }
+    }, 500);
 }
 
 // ============ AUTHENTICATION ============
