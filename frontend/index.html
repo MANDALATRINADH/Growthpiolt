@@ -9,132 +9,7 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * { font-family: 'Inter', sans-serif; }
-        .nav-item { display: flex; align-items: center; padding: 10px 12px; margin: 4px 0; border-radius: 12px; color: #6b7280; cursor: pointer; transition: all 0.2s; }
-        .nav-item:hover { background: #f3f4f6; color: #4f46e5; }
-        .nav-item.active { background: #e0e7ff; color: #4f46e5; }
-        .page { display: none; }
-        .page.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .toast-slide { animation: slideIn 0.3s ease; }
-        .sidebar-scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; }
-        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
-        .sidebar-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .reading-card, .twister-card, .note-card { transition: transform 0.2s, box-shadow 0.2s; }
-        .reading-card:hover, .twister-card:hover, .note-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        @media (max-width: 768px) { .sidebar-open { transform: translateX(0) !important; } }
-        
-        /* Dark Mode Styles */
-        body.dark-mode {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        }
-        body.dark-mode .bg-white,
-        body.dark-mode .bg-gray-50,
-        body.dark-mode .bg-gradient-to-br {
-            background-color: #1e1e2e !important;
-            background-image: none !important;
-        }
-        body.dark-mode .bg-gray-800,
-        body.dark-mode .bg-gray-700,
-        body.dark-mode .bg-indigo-50,
-        body.dark-mode .bg-purple-50,
-        body.dark-mode .bg-blue-50,
-        body.dark-mode .bg-green-50,
-        body.dark-mode .bg-yellow-50,
-        body.dark-mode .bg-pink-50,
-        body.dark-mode .bg-indigo-100 {
-            background-color: #2d2d44 !important;
-        }
-        body.dark-mode .text-gray-800,
-        body.dark-mode .text-gray-700,
-        body.dark-mode .text-gray-600,
-        body.dark-mode .text-indigo-600,
-        body.dark-mode .text-purple-600,
-        body.dark-mode .text-blue-600,
-        body.dark-mode .text-green-600 {
-            color: #e0e0e0 !important;
-        }
-        body.dark-mode .text-gray-500,
-        body.dark-mode .text-gray-400 {
-            color: #a0a0b0 !important;
-        }
-        body.dark-mode .border-gray-200,
-        body.dark-mode .border-gray-100,
-        body.dark-mode .border-indigo-100,
-        body.dark-mode .border-purple-100,
-        body.dark-mode .border-blue-100,
-        body.dark-mode .border-green-100,
-        body.dark-mode .border-pink-100,
-        body.dark-mode .border-yellow-100 {
-            border-color: #3d3d5c !important;
-        }
-        body.dark-mode .bg-white\/10,
-        body.dark-mode .bg-white\/20,
-        body.dark-mode .bg-white\/30,
-        body.dark-mode .bg-white\/50 {
-            background-color: rgba(45, 45, 68, 0.8) !important;
-        }
-        body.dark-mode .bg-black\/30 {
-            background-color: rgba(0, 0, 0, 0.5) !important;
-        }
-        body.dark-mode .nav-item {
-            color: #a0a0b0;
-        }
-        body.dark-mode .nav-item:hover {
-            background: #2d2d44;
-            color: #a78bfa;
-        }
-        body.dark-mode .nav-item.active {
-            background: #4c1d95;
-            color: #c084fc;
-        }
-        body.dark-mode .bg-gradient-to-r {
-            background-image: linear-gradient(to right, #4c1d95, #7e22ce) !important;
-        }
-        body.dark-mode .toast {
-            background-color: #2d2d44;
-            border-color: #4c1d95;
-        }
-        
-        /* Dark Mode Toggle Button */
-        .dark-mode-toggle {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 1000;
-            background: #4f46e5;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: all 0.3s;
-        }
-        .dark-mode-toggle:hover {
-            transform: scale(1.1);
-        }
-        body.dark-mode .dark-mode-toggle {
-            background: #8b5cf6;
-        }
-        @media (max-width: 768px) {
-            .dark-mode-toggle {
-                top: 70px;
-                right: 15px;
-                width: 40px;
-                height: 40px;
-                font-size: 1.2rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gradient-to-br from-gray-50 via-purple-50 to-indigo-50 flex flex-col min-h-screen">
 
@@ -175,8 +50,8 @@
                     </div>
                     <div class="relative my-6"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div><div class="relative flex justify-center text-sm"><span class="px-2 bg-white text-gray-400">Or continue with</span></div></div>
                     
-                    <!-- GOOGLE LOGIN BUTTON - ADDED HERE -->
-                    <div id="googleLoginBtn"></div>
+                    <!-- GOOGLE LOGIN BUTTON -->
+                    <div id="googleLoginBtn" class="flex justify-center"></div>
                     
                     <div class="mt-6 text-center"><p class="text-gray-500">Don't have an account? <button onclick="showSignupForm()" class="text-indigo-600 hover:text-indigo-700 font-semibold">Sign Up</button></p></div>
                 </div>
@@ -192,8 +67,8 @@
                     </div>
                     <div class="relative my-6"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div><div class="relative flex justify-center text-sm"><span class="px-2 bg-white text-gray-400">Or sign up with</span></div></div>
                     
-                    <!-- GOOGLE SIGNUP BUTTON - ADDED HERE -->
-                    <div id="googleSignupBtn"></div>
+                    <!-- GOOGLE SIGNUP BUTTON -->
+                    <div id="googleSignupBtn" class="flex justify-center"></div>
                     
                     <div class="mt-6 text-center"><p class="text-gray-500">Already have an account? <button onclick="showLoginForm()" class="text-indigo-600 hover:text-indigo-700 font-semibold">Login</button></p></div>
                 </div>
@@ -205,22 +80,31 @@
 <!-- Dashboard -->
 <div id="dashboardPage" style="display: none;" class="flex-1">
     <aside id="sidebar" class="fixed left-0 top-0 w-64 h-full bg-white border-r border-gray-200 z-50 transition-transform duration-300 -translate-x-full lg:translate-x-0 shadow-lg sidebar-scroll flex flex-col">
-        <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 flex-shrink-0"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-xl shadow-md">🚀</div><span class="text-xl font-bold text-gray-800">GrowthPilot</span></div></div>
-        <nav class="p-4 space-y-6 flex-1 overflow-y-auto">
-            <div><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Overview</div>
+        <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-xl shadow-md">🚀</div>
+                <span class="text-xl font-bold text-gray-800">GrowthPilot</span>
+            </div>
+        </div>
+        <nav class="p-4 space-y-6 flex-1 overflow-y-auto sidebar-scroll">
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Overview</div>
                 <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')"><span class="text-xl mr-3">📊</span><span>Dashboard</span></div>
                 <div class="nav-item" data-page="analytics" onclick="navigateTo('analytics')"><span class="text-xl mr-3">📈</span><span>Analytics</span></div>
             </div>
-            <div><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Planning</div>
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Planning</div>
                 <div class="nav-item" data-page="timetable" onclick="navigateTo('timetable')"><span class="text-xl mr-3">📅</span><span>Timetable</span></div>
                 <div class="nav-item" data-page="roadmap" onclick="navigateTo('roadmap')"><span class="text-xl mr-3">🗺️</span><span>3-Month Roadmap</span></div>
                 <div class="nav-item" data-page="habits" onclick="navigateTo('habits')"><span class="text-xl mr-3">✅</span><span>Daily Habits</span></div>
             </div>
-            <div><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Skills</div>
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Skills</div>
                 <div class="nav-item" data-page="english" onclick="navigateTo('english')"><span class="text-xl mr-3">🎤</span><span>English Fluency</span></div>
                 <div class="nav-item" data-page="tonguetwisters" onclick="navigateTo('tonguetwisters')"><span class="text-xl mr-3">👅</span><span>Tongue Twisters</span></div>
             </div>
-            <div><div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Tools</div>
+            <div>
+                <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3 mb-2">Tools</div>
                 <div class="nav-item" data-page="notes" onclick="navigateTo('notes')"><span class="text-xl mr-3">📝</span><span>Notes & Journal</span></div>
                 <div class="nav-item" data-page="feedback" onclick="navigateTo('feedback')"><span class="text-xl mr-3">💬</span><span>Feedback & Support</span></div>
                 <div class="nav-item" data-page="products" onclick="navigateTo('products')"><span class="text-xl mr-3">⭐</span><span>Premium</span></div>
@@ -261,7 +145,7 @@
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h3 class="font-semibold text-gray-800 mb-4">📅 Today's Schedule</h3><div id="todaySchedule" class="space-y-2"><p class="text-gray-500 text-center py-8">No blocks scheduled</p></div></div>
+                <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h3 class="font-semibold text-gray-800 mb-4">📅 Today's Schedule</h3><div id="todaySchedule" class="space-y-2 max-h-96 overflow-y-auto"><p class="text-gray-500 text-center py-8">No blocks scheduled</p></div></div>
                 <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h3 class="font-semibold text-gray-800 mb-4">⏱️ Quick Timer</h3><div class="text-6xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 py-4" id="timerDisplay">25:00</div><div class="flex justify-center gap-2 flex-wrap"><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 transition" onclick="setTimer(5)">5m</button><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 transition" onclick="setTimer(25)">25m</button><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 transition" onclick="setTimer(50)">50m</button><button class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition shadow-md" id="timerStartBtn" onclick="toggleTimer()">▶ Start</button><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 transition" onclick="resetTimer()">↺</button></div></div>
             </div>
         </div>
@@ -273,17 +157,17 @@
 
         <!-- Timetable Page -->
         <div id="page-timetable" class="page">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-4 flex-wrap gap-4"><h1 class="text-2xl font-bold text-gray-800">📅 Daily Timetable</h1><button class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition shadow-sm" onclick="openAddScheduleModal()">+ Add Block</button></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><h3 class="font-semibold text-gray-800 mb-3">📋 Today's Plan</h3><div id="fullSchedule" class="space-y-2"></div></div><div><h3 class="font-semibold text-gray-800 mb-3">⚡ Quick Templates</h3><div class="flex flex-col gap-2"><button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition" onclick="applyTemplate('developer')">💻 Developer</button><button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition" onclick="applyTemplate('student')">📚 Student</button><button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition" onclick="applyTemplate('balanced')">⚖️ Balanced</button></div><div class="mt-4"><h3 class="font-semibold text-gray-800 mb-3">📊 Stats</h3><div class="space-y-2"><div class="flex justify-between"><span class="text-gray-500">Study Blocks</span><span class="text-gray-800 font-semibold" id="studyBlocks">0</span></div><div class="flex justify-between"><span class="text-gray-500">Break Time</span><span class="text-gray-800 font-semibold" id="breakTime">0m</span></div><div class="flex justify-between"><span class="text-gray-500">Total Planned</span><span class="text-gray-800 font-semibold" id="totalPlanned">0h</span></div></div></div></div></div></div>
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-4 flex-wrap gap-4"><h1 class="text-2xl font-bold text-gray-800">📅 Daily Timetable</h1><button class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition shadow-sm" onclick="openAddScheduleModal()">+ Add Block</button></div><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div><h3 class="font-semibold text-gray-800 mb-3">📋 Today's Plan</h3><div id="fullSchedule" class="space-y-2 max-h-96 overflow-y-auto"></div></div><div><h3 class="font-semibold text-gray-800 mb-3">⚡ Quick Templates</h3><div class="flex flex-col gap-2"><button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition" onclick="applyTemplate('developer')">💻 Developer</button><button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition" onclick="applyTemplate('student')">📚 Student</button><button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-indigo-100 transition" onclick="applyTemplate('balanced')">⚖️ Balanced</button></div><div class="mt-4"><h3 class="font-semibold text-gray-800 mb-3">📊 Stats</h3><div class="space-y-2"><div class="flex justify-between"><span class="text-gray-500">Study Blocks</span><span class="text-gray-800 font-semibold" id="studyBlocks">0</span></div><div class="flex justify-between"><span class="text-gray-500">Break Time</span><span class="text-gray-800 font-semibold" id="breakTime">0m</span></div><div class="flex justify-between"><span class="text-gray-500">Total Planned</span><span class="text-gray-800 font-semibold" id="totalPlanned">0h</span></div></div></div></div></div></div>
         </div>
 
         <!-- Roadmap Page -->
         <div id="page-roadmap" class="page">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold text-gray-800">🗺️ 3-Month Roadmap</h1><button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-200 transition" onclick="resetRoadmap()">Reset</button></div><div class="flex gap-4 overflow-x-auto pb-4" id="roadmapContainer"></div></div>
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold text-gray-800">🗺️ 3-Month Roadmap</h1><button class="bg-gray-100 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-200 transition" onclick="resetRoadmap()">Reset</button></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-h-[600px] overflow-y-auto p-2" id="roadmapContainer"></div></div>
         </div>
 
         <!-- Habits Page -->
         <div id="page-habits" class="page">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold text-gray-800">✅ Daily Habits</h1><button class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition shadow-sm" onclick="openAddHabitModal()">+ Add Habit</button></div><div id="habitTrackerContainer"></div><div class="mt-6"><h3 class="font-semibold text-gray-800 mb-3">🏆 Achievements</h3><div id="achievementsContainer"></div></div></div>
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold text-gray-800">✅ Daily Habits</h1><button class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition shadow-sm" onclick="openAddHabitModal()">+ Add Habit</button></div><div id="habitTrackerContainer" class="max-h-[500px] overflow-y-auto"></div><div class="mt-6"><h3 class="font-semibold text-gray-800 mb-3">🏆 Achievements</h3><div id="achievementsContainer"></div></div></div>
         </div>
 
         <!-- English Page -->
@@ -293,76 +177,24 @@
 
         <!-- Tongue Twisters Page -->
         <div id="page-tonguetwisters" class="page">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h1 class="text-2xl font-bold text-gray-800 mb-4">👅 Tongue Twister Challenge</h1><div class="grid md:grid-cols-2 gap-6"><div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-6 twister-card shadow-md border border-pink-100 text-center"><div class="inline-block px-3 py-1 bg-pink-200 text-pink-800 rounded-full text-xs mb-3" id="twisterDifficulty">Medium</div><div id="twisterText" class="text-xl font-medium text-gray-800 mb-6 leading-relaxed bg-white/50 rounded-xl p-4"></div><div class="flex gap-3 justify-center"><button class="bg-indigo-600 text-white px-5 py-2 rounded-lg hover:bg-indigo-700 transition shadow-sm" onclick="nextTwister()">🔄 Next Twister</button><button class="bg-green-600 text-white px-5 py-2 rounded-lg hover:bg-green-700 transition shadow-sm" onclick="markTwisterComplete()">✅ Done</button></div><div class="mt-3 text-xs text-gray-500">🎯 Say it 3 times fast! Master all 12 twisters!</div></div><div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 twister-card shadow-md border border-yellow-100"><h3 class="font-semibold text-yellow-800 text-lg mb-4 text-center">📊 Your Stats</h3><div class="text-center mb-4"><span class="text-6xl">🔥</span><span class="text-6xl font-bold text-yellow-700" id="twisterStreak">0</span><p class="text-gray-600">Twisters Mastered</p></div><div class="space-y-3"><div><div class="flex justify-between text-sm"><span class="text-gray-700">Easy</span><span id="easyCount" class="font-semibold">0</span><span class="text-gray-400">/5</span></div><div class="h-2 bg-gray-200 rounded-full mt-1"><div class="h-full bg-green-500 rounded-full" style="width:0%" id="easyBar"></div></div></div><div><div class="flex justify-between text-sm"><span class="text-gray-700">Medium</span><span id="mediumCount" class="font-semibold">0</span><span class="text-gray-400">/4</span></div><div class="h-2 bg-gray-200 rounded-full mt-1"><div class="h-full bg-yellow-500 rounded-full" style="width:0%" id="mediumBar"></div></div></div><div><div class="flex justify-between text-sm"><span class="text-gray-700">Hard</span><span id="hardCount" class="font-semibold">0</span><span class="text-gray-400">/3</span></div><div class="h-2 bg-gray-200 rounded-full mt-1"><div class="h-full bg-red-500 rounded-full" style="width:0%" id="hardBar"></div></div></div></div></div></div><div class="mt-6"><h3 class="font-semibold text-gray-800 mb-3">📜 All Twisters (12 Challenges)</h3><div id="twisterList" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto"></div></div></div>
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h1 class="text-2xl font-bold text-gray-800 mb-4">👅 Tongue Twister Challenge</h1><div class="grid md:grid-cols-2 gap-6"><div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-6 twister-card shadow-md border border-pink-100 text-center"><div class="inline-block px-3 py-1 bg-pink-200 text-pink-800 rounded-full text-xs mb-3" id="twisterDifficulty">Medium</div><div id="twisterText" class="text-xl font-medium text-gray-800 mb-6 leading-relaxed"></div><div class="flex gap-3 justify-center flex-wrap"><button class="bg-pink-600 text-white px-5 py-2 rounded-lg hover:bg-pink-700 transition shadow-sm" onclick="nextTwister()">🎲 New Twister</button><button class="bg-purple-600 text-white px-5 py-2 rounded-lg hover:bg-purple-700 transition shadow-sm" onclick="speakTwister()">🔊 Speak</button><button class="bg-amber-600 text-white px-5 py-2 rounded-lg hover:bg-amber-700 transition shadow-sm" onclick="markTwisterComplete()">🎙️ Mastered</button></div></div><div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 shadow-md border border-blue-100"><h3 class="font-semibold text-blue-800 text-lg mb-4">🏆 Your Progress</h3><div class="space-y-4"><div class="bg-white rounded-xl p-4"><div class="flex justify-between text-sm mb-1"><span class="text-gray-600">Mastered</span><span class="text-blue-600 font-bold" id="masteredCount">0</span><span class="text-gray-400">/12</span></div><div class="h-2 bg-gray-200 rounded-full overflow-hidden"><div class="h-full bg-blue-600 rounded-full" id="masteryBar" style="width:0%"></div></div></div><div class="bg-white rounded-xl p-4"><p class="text-gray-600 text-sm">Best Streak: <span class="font-bold text-blue-600" id="bestTwisterStreak">0</span> correct attempts</p><p class="text-gray-600 text-sm mt-2">Total Practice: <span class="font-bold text-purple-600" id="totalTwisterAttempts">0</span> times</p></div><div class="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-4 text-center"><p class="text-amber-800 text-sm font-semibold">💡 Pro Tip</p><p class="text-gray-600 text-xs mt-1">Start slow, then increase speed. Clarity first, speed second!</p></div></div></div></div><div class="mt-6"><h3 class="font-semibold text-gray-800 mb-3">📜 All Twisters</h3><div id="twisterList" class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-y-auto"></div></div></div>
         </div>
 
         <!-- Notes Page -->
         <div id="page-notes" class="page">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h1 class="text-2xl font-bold text-gray-800 mb-4">📝 Notes & Journal</h1><div class="grid md:grid-cols-2 gap-6"><div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-5 note-card shadow-md border border-blue-100"><h3 class="font-semibold text-blue-800 text-lg mb-4">📓 Quick Notes</h3><div class="bg-white rounded-xl p-3 mb-4"><input type="text" id="noteInput" placeholder="Write a note..." class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-blue-500"></div><button class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm mb-4" onclick="addNote()">+ Add Note</button><div id="notesList" class="space-y-2 max-h-80 overflow-y-auto"></div></div><div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-5 note-card shadow-md border border-purple-100"><h3 class="font-semibold text-purple-800 text-lg mb-4">📔 Daily Journal</h3><div class="bg-white rounded-xl p-3 mb-3"><textarea id="journalInput" rows="4" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 focus:outline-none focus:border-purple-500" placeholder="Reflect on your progress..."></textarea></div><div class="flex gap-2 justify-center mb-3"><span class="text-2xl cursor-pointer hover:scale-110 transition p-2 hover:bg-purple-100 rounded-full" onclick="selectMood(this,'😊')">😊</span><span class="text-2xl cursor-pointer hover:scale-110 transition p-2 hover:bg-purple-100 rounded-full" onclick="selectMood(this,'😐')">😐</span><span class="text-2xl cursor-pointer hover:scale-110 transition p-2 hover:bg-purple-100 rounded-full" onclick="selectMood(this,'😤')">😤</span><span class="text-2xl cursor-pointer hover:scale-110 transition p-2 hover:bg-purple-100 rounded-full" onclick="selectMood(this,'😴')">😴</span><span class="text-2xl cursor-pointer hover:scale-110 transition p-2 hover:bg-purple-100 rounded-full" onclick="selectMood(this,'🤩')">🤩</span></div><button class="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition shadow-sm mb-4" onclick="saveJournal()">Save Journal</button><div id="journalHistory" class="space-y-2 max-h-80 overflow-y-auto"></div></div></div></div>
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><div class="flex justify-between items-center mb-4"><h1 class="text-2xl font-bold text-gray-800">📝 Notes & Journal</h1><button class="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 transition shadow-sm" onclick="openAddNoteModal()">+ New Note</button></div><div id="notesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto"></div></div>
         </div>
 
         <!-- Feedback Page -->
         <div id="page-feedback" class="page">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h1 class="text-2xl font-bold text-gray-800 mb-4">💬 Feedback & Support</h1><div class="grid md:grid-cols-2 gap-6"><div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5"><h3 class="font-semibold text-gray-800 mb-3">📝 Send Feedback</h3><textarea id="feedbackText" rows="4" class="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-800 mb-3" placeholder="Share your feedback..."></textarea><input type="text" id="feedbackName" placeholder="Your Name (optional)" class="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-800 mb-3"><input type="email" id="feedbackEmail" placeholder="Your Email (optional)" class="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-800 mb-3"><button onclick="sendFeedback()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition w-full">Send Feedback</button></div><div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5"><h3 class="font-semibold text-gray-800 mb-3">📞 Contact Info</h3><div class="space-y-3"><div class="flex items-center gap-3 p-2 bg-white rounded-lg"><span class="text-2xl">📧</span><span class="text-gray-700">growthpilot@gmail.com</span></div><div class="flex items-center gap-3 p-2 bg-white rounded-lg"><span class="text-2xl">📱</span><span class="text-gray-700">+91 6304248659</span></div><div class="flex items-center gap-3 p-2 bg-white rounded-lg"><span class="text-2xl">📍</span><span class="text-gray-700">Visakhapatnam, Andhra Pradesh, India</span></div><div class="flex items-center gap-3 p-2 bg-white rounded-lg"><span class="text-2xl">🌐</span><span class="text-gray-700">www.growthpilot.com</span></div></div><div class="mt-4 p-3 bg-indigo-100 rounded-lg"><p class="text-sm text-gray-600">💡 Need help? Chat with our AI assistant!</p></div></div></div><div class="mt-6"><h3 class="font-semibold text-gray-800 mb-3">📋 Recent Feedback</h3><div id="feedbackList" class="space-y-2 max-h-64 overflow-y-auto"></div></div></div>
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h1 class="text-2xl font-bold text-gray-800 mb-4">💬 Feedback & Support</h1><textarea id="feedbackInput" rows="4" placeholder="Share your feedback, report issues, or suggest features..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:border-indigo-500"></textarea><button onclick="submitFeedback()" class="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-xl hover:bg-indigo-700 transition shadow-sm">Submit Feedback</button><div class="mt-6"><h3 class="font-semibold text-gray-800 mb-2">📌 Quick Help</h3><p class="text-gray-500 text-sm">📧 Email: support@growthpilot.com<br>⏱️ Response time: Usually within 24 hours</p></div></div>
         </div>
 
-        <!-- Products/Premium Page -->
+        <!-- Products Page -->
         <div id="page-products" class="page">
-            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h1 class="text-2xl font-bold text-gray-800 mb-4">⭐ Upgrade to Premium</h1>
-                <p class="text-gray-600 mb-6">Unlock all premium features and take your growth journey to the next level!</p>
-                
-                <div class="grid md:grid-cols-2 gap-6">
-                    <!-- Monthly Plan -->
-                    <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 text-center hover:shadow-lg transition">
-                        <div class="text-5xl mb-3">📖</div>
-                        <h3 class="text-xl font-bold text-gray-800">Monthly Plan</h3>
-                        <div class="text-4xl font-bold text-indigo-600 my-3">₹99<span class="text-sm text-gray-500">/month</span></div>
-                        <ul class="text-left text-sm text-gray-600 space-y-2 mb-6">
-                            <li>✅ Unlimited habits tracking</li>
-                            <li>✅ Advanced analytics & insights</li>
-                            <li>✅ Priority email support</li>
-                            <li>✅ Export your data</li>
-                            <li>✅ Custom themes</li>
-                        </ul>
-                        <button onclick="initiateRazorpayPayment(9900, 'monthly', 'GrowthPilot Monthly Premium')" class="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition font-semibold">
-                            Subscribe Monthly - ₹99
-                        </button>
-                    </div>
-                    
-                    <!-- Yearly Plan -->
-                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 text-center ring-2 ring-indigo-500 hover:shadow-lg transition relative">
-                        <div class="absolute -top-3 left-1/2 transform -translate-x-1/2"><span class="bg-indigo-600 text-white text-xs px-3 py-1 rounded-full">Best Value</span></div>
-                        <div class="text-5xl mb-3 mt-4">🚀</div>
-                        <h3 class="text-xl font-bold text-gray-800">Yearly Plan</h3>
-                        <div class="text-4xl font-bold text-indigo-600 my-3">₹999<span class="text-sm text-gray-500">/year</span></div>
-                        <div class="text-sm text-green-600 mb-2">Save 16% • 2 months free</div>
-                        <ul class="text-left text-sm text-gray-600 space-y-2 mb-6">
-                            <li>✅ Everything in Monthly</li>
-                            <li>✅ 2 months absolutely free</li>
-                            <li>✅ Lifetime support access</li>
-                            <li>✅ Early access to new features</li>
-                            <li>✅ Exclusive community access</li>
-                        </ul>
-                        <button onclick="initiateRazorpayPayment(99900, 'yearly', 'GrowthPilot Yearly Premium')" class="w-full bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition font-semibold">
-                            Subscribe Yearly - ₹999
-                        </button>
-                    </div>
-                </div>
-                <div class="mt-8 text-center text-sm text-gray-500"><p>🔒 Secure payment powered by Razorpay • UPI, Cards, Netbanking • Cancel anytime</p></div>
-            </div>
+            <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h1 class="text-2xl font-bold text-gray-800 mb-4">⭐ Premium Features</h1><div class="grid md:grid-cols-2 gap-6"><div class="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-6 text-center"><div class="text-5xl mb-3">🚀</div><h3 class="text-xl font-bold text-gray-800">Pro Plan</h3><p class="text-3xl font-bold text-amber-600 my-3">$9.99<span class="text-sm text-gray-500">/month</span></p><ul class="text-left space-y-2 text-gray-600 text-sm mb-4"><li>✓ Unlimited Notes & Storage</li><li>✓ Advanced Analytics</li><li>✓ AI-Powered Recommendations</li><li>✓ Priority Support</li><li>✓ Export Data</li></ul><button onclick="initiatePremiumPayment()" class="bg-amber-600 text-white px-6 py-2 rounded-xl hover:bg-amber-700 transition w-full">Upgrade Now</button></div><div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 text-center"><div class="text-5xl mb-3">✨</div><h3 class="text-xl font-bold text-gray-800">Free Plan</h3><p class="text-3xl font-bold text-gray-600 my-3">$0</p><ul class="text-left space-y-2 text-gray-600 text-sm mb-4"><li>✓ Basic Dashboard</li><li>✓ Limited Notes (10)</li><li>✓ Standard Features</li></ul><button class="bg-gray-400 text-white px-6 py-2 rounded-xl cursor-not-allowed w-full" disabled>Current Plan</button></div></div></div>
         </div>
     </main>
-</div>
-
-<!-- Chatbot -->
-<div id="chatbot" class="fixed bottom-6 right-6 z-[1000]">
-    <button id="chatToggle" class="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-2xl hover:scale-110 transition transform chat-bubble">💬</button>
-    <div id="chatWindow" class="absolute bottom-20 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 hidden flex-col overflow-hidden">
-        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4"><div class="flex justify-between items-center"><h3 class="font-semibold">🤖 AI Assistant</h3><button onclick="toggleChat()" class="text-white hover:text-gray-200">✕</button></div><p class="text-xs text-indigo-200">Ask me anything!</p></div>
-        <div id="chatMessages" class="h-80 overflow-y-auto p-4 space-y-2 bg-gray-50"><div class="flex"><div class="bg-indigo-100 rounded-lg p-2 max-w-[80%]"><p class="text-sm text-gray-800">👋 Hello! Ask me about features, habits, or account help.</p></div></div></div>
-        <div class="p-3 border-t border-gray-200 flex gap-2 bg-white"><input type="text" id="chatInput" placeholder="Type your question..." class="flex-1 px-3 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none"><button onclick="sendChatMessage()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">Send</button></div>
-    </div>
 </div>
 
 <!-- Footer -->
@@ -378,142 +210,20 @@
 </footer>
 
 <!-- Modals -->
-<div id="scheduleModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-[1000] hidden items-center justify-center"><div class="bg-white rounded-2xl p-6 w-[90%] max-w-md shadow-xl"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-gray-800">Add Schedule</h3><button class="text-gray-400 hover:text-gray-600" onclick="closeModal('scheduleModal')">✕</button></div><input type="time" id="scheduleStart" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><input type="time" id="scheduleEnd" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><input type="text" id="scheduleActivity" placeholder="Activity" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><select id="scheduleCategory" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><option value="study">📚 Study</option><option value="coding">💻 Coding</option><option value="break">☕ Break</option></select><button class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition" onclick="addScheduleBlock()">Add Block</button></div></div>
+<div id="scheduleModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-[1000] hidden items-center justify-center"><div class="bg-white rounded-2xl p-6 w-[90%] max-w-md shadow-xl"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-gray-800">Add Schedule Block</h3><button class="text-gray-400 hover:text-gray-600" onclick="closeModal('scheduleModal')">✕</button></div><input type="time" id="scheduleStart" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><input type="time" id="scheduleEnd" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><input type="text" id="scheduleActivity" placeholder="Activity (e.g., Coding, Study)" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><select id="scheduleCategory" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><option value="study">📚 Study</option><option value="coding">💻 Coding</option><option value="break">☕ Break</option><option value="english">🎤 English</option></select><button class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition" onclick="addScheduleBlock()">Add Block</button></div></div>
 
-<div id="habitModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-[1000] hidden items-center justify-center"><div class="bg-white rounded-2xl p-6 w-[90%] max-w-md shadow-xl"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-gray-800">Add Habit</h3><button class="text-gray-400 hover:text-gray-600" onclick="closeModal('habitModal')">✕</button></div><input type="text" id="habitName" placeholder="Habit name" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><input type="text" id="habitIcon" placeholder="Icon" maxlength="2" value="📌" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><button class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition" onclick="addHabit()">Add Habit</button></div></div>
+<div id="habitModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-[1000] hidden items-center justify-center"><div class="bg-white rounded-2xl p-6 w-[90%] max-w-md shadow-xl"><div class="flex justify-between items-center mb-4"><h3 class="text-xl font-bold text-gray-800">Add Habit</h3><button class="text-gray-400 hover:text-gray-600" onclick="closeModal('habitModal')">✕</button></div><input type="text" id="habitName" placeholder="Habit name (e.g., Meditation)" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><input type="text" id="habitIcon" placeholder="Icon (e.g., 🧘)" maxlength="2" value="📌" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg mb-3"><button class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition" onclick="addHabit()">Add Habit</button></div></div>
 
 <div id="toastContainer" class="fixed bottom-5 right-5 z-[1000] space-y-2"></div>
+<div id="chatbot" class="fixed bottom-6 right-6 z-[1000]">
+    <button id="chatToggle" class="w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-2xl hover:scale-110 transition transform">💬</button>
+    <div id="chatWindow" class="absolute bottom-20 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 hidden flex-col overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4"><div class="flex justify-between items-center"><h3 class="font-semibold">🤖 AI Assistant</h3><button onclick="toggleChat()" class="text-white hover:text-gray-200">✕</button></div><p class="text-xs text-indigo-200">Ask me anything!</p></div>
+        <div id="chatMessages" class="h-80 overflow-y-auto p-4 space-y-2 bg-gray-50"><div class="flex"><div class="bg-indigo-100 rounded-lg p-2 max-w-[80%]"><p class="text-sm text-gray-800">👋 Hello! Ask me about features, habits, or account help.</p></div></div></div>
+        <div class="p-3 border-t border-gray-200 flex gap-2 bg-white"><input type="text" id="chatInput" placeholder="Type your question..." class="flex-1 px-3 py-2 bg-gray-100 rounded-lg text-sm focus:outline-none"><button onclick="sendChatMessage()" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition">Send</button></div>
+    </div>
+</div>
 
 <script src="app.js"></script>
-
-<!-- Google Login Initialization Script -->
-<script>
-// Google Sign-In Initialization
-function initializeGoogleSignIn() {
-    if (typeof google !== 'undefined' && google.accounts) {
-        google.accounts.id.initialize({
-            client_id: '956139573371-kk1o33j2kcfrri7mgmh4p64ojh3jkfjd.apps.googleusercontent.com',
-            callback: handleGoogleCredential,
-            auto_select: false
-        });
-        
-        const loginBtn = document.getElementById('googleLoginBtn');
-        const signupBtn = document.getElementById('googleSignupBtn');
-        
-        if (loginBtn) {
-            google.accounts.id.renderButton(loginBtn, { 
-                theme: 'outline', 
-                size: 'large', 
-                width: '100%',
-                text: 'continue_with'
-            });
-        }
-        
-        if (signupBtn) {
-            google.accounts.id.renderButton(signupBtn, { 
-                theme: 'outline', 
-                size: 'large', 
-                width: '100%',
-                text: 'signup_with'
-            });
-        }
-    }
-}
-
-// Handle Google Credential Response
-function handleGoogleCredential(response) {
-    try {
-        const credential = response.credential;
-        const decoded = parseJwt(credential);
-        
-        const userInfo = {
-            name: decoded.name,
-            email: decoded.email,
-            picture: decoded.picture,
-            googleId: decoded.sub
-        };
-        
-        let users = JSON.parse(localStorage.getItem('growthpilot_users') || '{}');
-        
-        if (!users[userInfo.email]) {
-            users[userInfo.email] = {
-                name: userInfo.name,
-                email: userInfo.email,
-                picture: userInfo.picture,
-                googleId: userInfo.googleId
-            };
-            localStorage.setItem('growthpilot_users', JSON.stringify(users));
-            if (typeof showToast === 'function') showToast(`Welcome ${userInfo.name}! 🎉`);
-        } else {
-            if (typeof showToast === 'function') showToast(`Welcome back, ${userInfo.name}! 🎉`);
-        }
-        
-        // Set current user
-        if (typeof window !== 'undefined') {
-            window.currentUser = { email: userInfo.email, name: userInfo.name, picture: userInfo.picture };
-            localStorage.setItem('growthpilot_current_user', JSON.stringify(window.currentUser));
-        }
-        
-        // Hide login, show dashboard
-        const authPage = document.getElementById('authPage');
-        const dashboardPage = document.getElementById('dashboardPage');
-        const mainFooter = document.getElementById('mainFooter');
-        
-        if (authPage) authPage.style.display = 'none';
-        if (dashboardPage) dashboardPage.style.display = 'block';
-        if (mainFooter) mainFooter.style.display = 'block';
-        
-        // Load user data if function exists
-        if (typeof loadUserData === 'function') {
-            loadUserData();
-        } else if (typeof initializeAppData === 'function') {
-            initializeAppData();
-        }
-        
-    } catch (error) {
-        console.error('Google login error:', error);
-        if (typeof showToast === 'function') showToast('Google login failed. Please try again.', 'error');
-    }
-}
-
-// Parse JWT token
-function parseJwt(token) {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    return JSON.parse(jsonPayload);
-}
-
-// Dark Mode Toggle Function
-function toggleDarkMode() {
-    document.body.classList.toggle('dark-mode');
-    const btn = document.getElementById('darkModeToggle');
-    if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('darkMode', 'enabled');
-        btn.innerHTML = '☀️';
-        btn.style.background = '#8b5cf6';
-    } else {
-        localStorage.setItem('darkMode', 'disabled');
-        btn.innerHTML = '🌙';
-        btn.style.background = '#4f46e5';
-    }
-}
-
-// Load Dark Mode preference
-if (localStorage.getItem('darkMode') === 'enabled') {
-    document.body.classList.add('dark-mode');
-    const toggleBtn = document.getElementById('darkModeToggle');
-    if (toggleBtn) {
-        toggleBtn.innerHTML = '☀️';
-        toggleBtn.style.background = '#8b5cf6';
-    }
-}
-
-// Initialize Google Sign-In when page loads
-initializeGoogleSignIn();
-</script>
-
 </body>
 </html>

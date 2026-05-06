@@ -1,153 +1,6 @@
 // ============ GOOGLE CLIENT ID ============
 const GOOGLE_CLIENT_ID = '956139573371-kk1o33j2kcfrri7mgmh4p64ojh3jkfjd.apps.googleusercontent.com';
 
-// ============ RAZORPAY PAYMENT INTEGRATION ============
-const RAZORPAY_KEY_ID = 'rzp_test_Sli38TkEX0wcaC';
-
-async function initiateRazorpayPayment(amount, planType, planName) {
-    if (!currentUser) {
-        showToast('Please login first to make a payment', 'error');
-        return;
-    }
-    
-    showToast('Creating payment order...', 'info');
-    
-    try {
-        const orderResponse = await fetch('/api/create-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                amount: amount,
-                currency: 'INR',
-                receipt: `receipt_${planType}_${Date.now()}`
-            })
-        });
-        
-        const orderData = await orderResponse.json();
-        
-        if (!orderData.success) {
-            throw new Error(orderData.error || 'Failed to create order');
-        }
-        
-        const options = {
-            key: RAZORPAY_KEY_ID,
-            amount: orderData.amount,
-            currency: orderData.currency,
-            name: 'GrowthPilot',
-            description: planName,
-            image: 'https://growthpiolt-a24j.vercel.app/logo.png',
-            order_id: orderData.order_id,
-            prefill: {
-                name: currentUser.name,
-                email: currentUser.email,
-                contact: ''
-            },
-            notes: { planType: planType, userId: currentUser.email },
-            theme: { color: '#4f46e5' },
-            modal: { ondismiss: function() { showToast('Payment cancelled', 'info'); } },
-            handler: function(response) {
-                verifyAndCompletePayment(
-                    response.razorpay_payment_id,
-                    response.razorpay_order_id,
-                    response.razorpay_signature,
-                    planType,
-                    orderData.amount
-                );
-            }
-        };
-        
-        const rzp = new Razorpay(options);
-        rzp.open();
-        
-    } catch (error) {
-        console.error('Payment initiation error:', error);
-        showToast(error.message || 'Failed to initiate payment. Please try again.', 'error');
-    }
-}
-
-async function verifyAndCompletePayment(paymentId, orderId, signature, planType, amount) {
-    showToast('Verifying payment...', 'info');
-    
-    try {
-        const verifyResponse = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                razorpay_payment_id: paymentId,
-                razorpay_order_id: orderId,
-                razorpay_signature: signature
-            })
-        });
-        
-        const verifyData = await verifyResponse.json();
-        
-        if (verifyData.success) {
-            const amountInRupees = amount / 100;
-            grantPremiumAccess(planType, paymentId);
-            showToast(`✓ Payment successful! ₹${amountInRupees} paid. Premium activated! 🎉`, 'success');
-            setTimeout(() => { location.reload(); }, 2000);
-        } else {
-            showToast('Payment verification failed. Please contact support.', 'error');
-            console.error('Verification failed:', verifyData);
-        }
-    } catch (error) {
-        console.error('Verification error:', error);
-        showToast('Payment verification error. Please contact support.', 'error');
-    }
-}
-
-function grantPremiumAccess(planType, paymentId) {
-    if (!currentUser) return;
-    
-    const premiumData = {
-        isPremium: true,
-        planType: planType,
-        paymentId: paymentId,
-        startDate: new Date().toISOString(),
-        expiryDate: planType === 'monthly' 
-            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-            : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-    };
-    
-    localStorage.setItem(`premium_${currentUser.email}`, JSON.stringify(premiumData));
-    
-    if (appData) {
-        appData.isPremium = true;
-        appData.premiumPlan = planType;
-        appData.premiumPaymentId = paymentId;
-        appData.premiumStartDate = premiumData.startDate;
-        appData.premiumExpiryDate = premiumData.expiryDate;
-        saveDataImmediately();
-    }
-    
-    updateUserUI();
-}
-
-function isPremiumUser() {
-    if (!currentUser) return false;
-    
-    const premiumData = localStorage.getItem(`premium_${currentUser.email}`);
-    if (!premiumData) return false;
-    
-    try {
-        const data = JSON.parse(premiumData);
-        if (!data.isPremium) return false;
-        
-        const expiryDate = new Date(data.expiryDate);
-        if (expiryDate < new Date()) {
-            localStorage.removeItem(`premium_${currentUser.email}`);
-            if (appData) {
-                appData.isPremium = false;
-                saveDataImmediately();
-            }
-            return false;
-        }
-        return true;
-    } catch(e) {
-        return false;
-    }
-}
-
 // ============ GLOBAL VARIABLES ============
 let currentUser = null;
 let appData = null;
@@ -159,36 +12,20 @@ let timerSeconds = 25 * 60;
 let timerRunning = false;
 let currentTwisterIdx = 0;
 let currentPassageIdx = 0;
-let selectedMood = '';
 
-// ============ 30+ READING PASSAGES (Easy to Hard) ============
+// ============ READING PASSAGES ============
 const READING_PASSAGES = [
-    { text: "The sun is shining brightly today. The birds are singing in the trees. It is a beautiful day to go outside and play.", level: "Easy", difficulty: 1 },
-    { text: "I like to read books. Reading helps me learn new things. My favorite books are about animals and nature.", level: "Easy", difficulty: 1 },
-    { text: "My family likes to eat dinner together every evening. We talk about our day and share happy moments.", level: "Easy", difficulty: 1 },
-    { text: "The cat sleeps on the soft couch. The dog plays in the green yard. They are best friends.", level: "Easy", difficulty: 1 },
-    { text: "Water is essential for life. We should drink plenty of water every day to stay healthy and active.", level: "Easy", difficulty: 1 },
-    { text: "The flowers in the garden are blooming. Their colors are red, yellow, pink, and purple. They smell wonderful.", level: "Easy", difficulty: 1 },
-    { text: "My school has a big library. There are many books, computers, and comfortable chairs for reading.", level: "Easy", difficulty: 1 },
-    { text: "Exercise is good for your body. Running, swimming, and cycling keep you fit and strong.", level: "Easy", difficulty: 1 },
-    { text: "The moon shines at night. The stars twinkle in the dark sky. It is a peaceful sight.", level: "Easy", difficulty: 1 },
-    { text: "I love eating fresh fruits like apples, bananas, and oranges. They are sweet and healthy.", level: "Easy", difficulty: 1 },
-    { text: "Technology has transformed the way we communicate with each other. Smartphones and social media platforms allow us to connect with people across the globe instantly.", level: "Medium", difficulty: 2 },
-    { text: "Artificial intelligence is revolutionizing various industries. From healthcare to transportation, AI systems are helping doctors diagnose diseases and enabling self-driving cars.", level: "Medium", difficulty: 2 },
-    { text: "Learning a new language opens doors to different cultures and perspectives. It requires dedication, patience, and consistent practice.", level: "Medium", difficulty: 2 },
-    { text: "Climate change is one of the most pressing challenges facing humanity. Rising temperatures and extreme weather events demand immediate action.", level: "Medium", difficulty: 2 },
-    { text: "Effective communication is a vital skill in both personal and professional life. It involves speaking clearly and listening actively.", level: "Medium", difficulty: 2 },
-    { text: "The human brain is remarkably complex, containing approximately 86 billion neurons that enable thought, memory, and consciousness.", level: "Medium", difficulty: 2 },
-    { text: "Space exploration has revealed fascinating discoveries about our universe. From the Moon landing to Mars rovers, humanity continues to push boundaries.", level: "Medium", difficulty: 2 },
-    { text: "Meditation and mindfulness practices have been shown to reduce stress, improve focus, and enhance overall well-being.", level: "Medium", difficulty: 2 },
-    { text: "Renewable energy sources like solar and wind power are becoming increasingly affordable and offer a sustainable alternative to fossil fuels.", level: "Medium", difficulty: 2 },
-    { text: "The art of public speaking combines confidence, preparation, and authentic connection with the audience. Great speakers tell compelling stories.", level: "Medium", difficulty: 2 },
-    { text: "The rapid advancement of quantum computing promises to revolutionize fields such as cryptography, drug discovery, and climate modeling.", level: "Hard", difficulty: 3 },
-    { text: "Neuroscience has revealed that neuroplasticity—the brain's ability to reorganize itself—continues throughout life, enabling lifelong learning.", level: "Hard", difficulty: 3 },
-    { text: "Blockchain technology extends beyond cryptocurrency applications, offering solutions for supply chain transparency and digital identity verification.", level: "Hard", difficulty: 3 },
-    { text: "Epigenetics reveals how environmental factors can influence gene expression without changing DNA sequences, affecting health across generations.", level: "Hard", difficulty: 3 },
-    { text: "The theory of evolution by natural selection explains the diversity of life on Earth through variation, inheritance, and differential survival.", level: "Hard", difficulty: 3 },
-    { text: "Cognitive biases are systematic patterns of deviation from rational judgment that can help individuals make more objective decisions.", level: "Hard", difficulty: 3 }
+    { text: "The sun is shining brightly today. The birds are singing in the trees. It is a beautiful day to go outside and play.", level: "Easy", difficulty: 1, words: 20 },
+    { text: "I like to read books. Reading helps me learn new things. My favorite books are about animals and nature.", level: "Easy", difficulty: 1, words: 18 },
+    { text: "My family likes to eat dinner together every evening. We talk about our day and share happy moments.", level: "Easy", difficulty: 1, words: 18 },
+    { text: "The cat sleeps on the soft couch. The dog plays in the green yard. They are best friends.", level: "Easy", difficulty: 1, words: 16 },
+    { text: "Water is essential for life. We should drink plenty of water every day to stay healthy and active.", level: "Easy", difficulty: 1, words: 17 },
+    { text: "Technology has transformed the way we communicate with each other. Smartphones and social media platforms allow us to connect with people across the globe instantly.", level: "Medium", difficulty: 2, words: 24 },
+    { text: "Artificial intelligence is revolutionizing various industries. From healthcare to transportation, AI systems are helping doctors diagnose diseases and enabling self-driving cars.", level: "Medium", difficulty: 2, words: 25 },
+    { text: "Climate change is one of the most pressing challenges facing humanity. Rising temperatures and extreme weather events demand immediate action.", level: "Medium", difficulty: 2, words: 22 },
+    { text: "The rapid advancement of quantum computing promises to revolutionize fields such as cryptography, drug discovery, and climate modeling.", level: "Hard", difficulty: 3, words: 20 },
+    { text: "Neuroscience has revealed that neuroplasticity—the brain's ability to reorganize itself—continues throughout life, enabling lifelong learning.", level: "Hard", difficulty: 3, words: 19 },
+    { text: "Blockchain technology extends beyond cryptocurrency applications, offering solutions for supply chain transparency and digital identity verification.", level: "Hard", difficulty: 3, words: 20 }
 ];
 
 // ============ TONGUE TWISTERS ============
@@ -214,56 +51,37 @@ const ROADMAP_DATA = [
         { name: 'JavaScript Basics', duration: '7 days', cat: 'fs' },
         { name: 'DOM Manipulation', duration: '4 days', cat: 'fs' },
         { name: 'Git & GitHub', duration: '3 days', cat: 'fs' },
-        { name: 'Node.js Basics', duration: '4 days', cat: 'fs' },
-        { name: 'Express.js', duration: '3 days', cat: 'fs' },
         { name: 'Python Basics', duration: '5 days', cat: 'ai' },
-        { name: 'AI Concepts', duration: '3 days', cat: 'ai' },
-        { name: 'English Grammar', duration: 'ongoing', cat: 'en' },
-        { name: 'Daily Vocabulary', duration: 'ongoing', cat: 'en' }
+        { name: 'English Grammar', duration: 'ongoing', cat: 'en' }
     ]},
     { month: 'Month 2: Intermediate', topics: [
         { name: 'React.js', duration: '6 days', cat: 'fs' },
         { name: 'React Hooks', duration: '5 days', cat: 'fs' },
         { name: 'MongoDB', duration: '6 days', cat: 'fs' },
         { name: 'REST APIs', duration: '5 days', cat: 'fs' },
-        { name: 'Auth & Security', duration: '4 days', cat: 'fs' },
         { name: 'Python Data Science', duration: '5 days', cat: 'ai' },
-        { name: 'ML Basics', duration: '5 days', cat: 'ai' },
-        { name: 'AI APIs', duration: '4 days', cat: 'ai' },
-        { name: 'Conversation Practice', duration: 'ongoing', cat: 'en' },
-        { name: 'Pronunciation', duration: 'ongoing', cat: 'en' }
+        { name: 'Conversation Practice', duration: 'ongoing', cat: 'en' }
     ]},
     { month: 'Month 3: Advanced', topics: [
         { name: 'Advanced React', duration: '5 days', cat: 'fs' },
         { name: 'TypeScript', duration: '4 days', cat: 'fs' },
         { name: 'Next.js', duration: '5 days', cat: 'fs' },
-        { name: 'DevOps Basics', duration: '4 days', cat: 'fs' },
-        { name: 'Full Stack Project #1', duration: '7 days', cat: 'fs' },
+        { name: 'Full Stack Project', duration: '7 days', cat: 'fs' },
         { name: 'Deep Learning', duration: '5 days', cat: 'ai' },
-        { name: 'AI-Powered Apps', duration: '5 days', cat: 'ai' },
-        { name: 'Full Stack Project #2', duration: '7 days', cat: 'fs' },
-        { name: 'Fluency Challenge', duration: 'ongoing', cat: 'en' },
-        { name: 'Presentation Skills', duration: 'ongoing', cat: 'en' }
+        { name: 'Fluency Challenge', duration: 'ongoing', cat: 'en' }
     ]}
 ];
 
 // ============ CHATBOT RESPONSES ============
 const CHAT_RESPONSES = {
     'how to use': 'You can navigate using the sidebar menu. Start with Dashboard, then explore Timetable, Roadmap, Habits, English Fluency, and Notes!',
-    'features': 'GrowthPilot offers: 📊 Dashboard analytics, 📅 Timetable planner, 🗺️ 3-Month Roadmap, ✅ Daily Habits tracker, 🎤 English Fluency practice with 30+ passages, 👅 Tongue Twisters, and 📝 Notes & Journal!',
+    'features': 'GrowthPilot offers: 📊 Dashboard analytics, 📅 Timetable planner, 🗺️ 3-Month Roadmap, ✅ Daily Habits tracker, 🎤 English Fluency practice, 👅 Tongue Twisters, and 📝 Notes!',
     'habit': 'Click on "Daily Habits" in the sidebar, then click "+ Add Habit" to create new habits. Click on the day circles to mark them as complete!',
-    'roadmap': 'The 3-Month Roadmap shows your learning path. Click on any topic to mark it as complete. Your progress is tracked automatically!',
-    'timetable': 'Go to Timetable page, click "+ Add Block" to schedule your day. You can also use the Quick Templates for common schedules!',
-    'timer': 'The Quick Timer helps you focus. Choose 5, 25, or 50 minutes, then click Start. Your study time is tracked automatically!',
-    'analytics': 'The Analytics page shows your study distribution, category progress, and personalized insights based on your activity!',
-    'note': 'You can add quick notes and daily journal entries with mood tracking. All your notes are saved automatically!',
-    'account': 'You can create an account using email/password or Google login. Your data is saved securely in your browser!',
-    'problem': 'If you face any issues, please use the Feedback & Support page to contact us. We respond within 24 hours!',
-    'streak': 'Your streak counts consecutive days of activity. Complete tasks and habits daily to increase your streak!',
-    'help': 'I can help you with: features, habits, roadmap, timetable, timer, analytics, notes, account issues, and troubleshooting. What would you like to know?',
-    'contact': 'You can reach us at growthpilot@gmail.com or call +91 6304248659. Our office is in Visakhapatnam, Andhra Pradesh!',
-    'feedback': 'Go to the Feedback & Support page in the sidebar to send us your feedback, suggestions, or report any issues!',
-    'default': "I'm here to help! You can ask me about: 📊 Features, ✅ Habits, 🗺️ Roadmap, 📅 Timetable, ⏱️ Timer, 📈 Analytics, 📝 Notes, 🔐 Account, 💬 Feedback, or 📞 Contact info."
+    'roadmap': 'The 3-Month Roadmap shows your learning path. Click on any topic to mark it as complete.',
+    'timetable': 'Go to Timetable page, click "+ Add Block" to schedule your day. You can also use Quick Templates!',
+    'timer': 'The Quick Timer helps you focus. Choose 5, 25, or 50 minutes, then click Start.',
+    'help': 'I can help you with: features, habits, roadmap, timetable, timer, analytics, notes, and account issues.',
+    'default': "I'm here to help! Ask me about features, habits, roadmap, timetable, timer, analytics, notes, or account help."
 };
 
 // ============ DEFAULT DATA ============
@@ -273,15 +91,12 @@ function getDefaultData() {
         habits: [
             { id: 1, name: 'Study Coding', icon: '💻', completed: [] },
             { id: 2, name: 'Practice English', icon: '🎤', completed: [] },
-            { id: 3, name: 'Tongue Twisters', icon: '👅', completed: [] },
-            { id: 4, name: 'Exercise', icon: '🏃', completed: [] },
-            { id: 5, name: 'Read 30min', icon: '📖', completed: [] }
+            { id: 3, name: 'Exercise', icon: '🏃', completed: [] }
         ],
         roadmapCompleted: {},
         twisters: { streak: 0, easy: [], medium: [], hard: [] },
         english: { speeds: [] },
         notes: [],
-        journals: [],
         feedbacks: [],
         streak: 0,
         lastActiveDate: null,
@@ -304,11 +119,7 @@ function showToast(msg, type = 'success') {
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
-        if (sidebar.style.transform === 'translateX(0px)') {
-            sidebar.style.transform = 'translateX(-100%)';
-        } else {
-            sidebar.style.transform = 'translateX(0)';
-        }
+        sidebar.classList.toggle('-translate-x-full');
     }
 }
 
@@ -354,23 +165,15 @@ function navigateTo(pageId) {
     if (pageId === 'habits') renderHabits();
     if (pageId === 'timetable') renderScheduleUI();
     if (pageId === 'analytics') initAnalytics();
-    if (pageId === 'english') newReadingPassage();
     if (pageId === 'tonguetwisters') {
         renderCurrentTwister();
         updateTwisterStats();
         renderTwisterList();
     }
-    if (pageId === 'notes') {
-        renderNotes();
-        renderJournals();
-    }
-    if (pageId === 'feedback') {
-        renderFeedbackList();
-    }
+    if (pageId === 'notes') renderNotes();
     
     if (window.innerWidth <= 1024) {
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar) sidebar.style.transform = 'translateX(-100%)';
+        document.getElementById('sidebar').classList.add('-translate-x-full');
     }
 }
 
@@ -415,51 +218,21 @@ function sendChatMessage() {
 }
 
 // ============ FEEDBACK ============
-function sendFeedback() {
-    const text = document.getElementById('feedbackText').value.trim();
-    const name = document.getElementById('feedbackName').value.trim();
-    const email = document.getElementById('feedbackEmail').value.trim();
-    
-    if (!text) {
+function submitFeedback() {
+    const feedback = document.getElementById('feedbackInput').value.trim();
+    if (!feedback) {
         showToast('Please enter your feedback', 'error');
         return;
     }
-    
     if (!appData.feedbacks) appData.feedbacks = [];
     appData.feedbacks.unshift({
         id: Date.now().toString(),
-        text: text,
-        name: name || 'Anonymous',
-        email: email || 'Not provided',
+        text: feedback,
         date: new Date().toISOString()
     });
     saveDataImmediately();
-    renderFeedbackList();
-    document.getElementById('feedbackText').value = '';
-    document.getElementById('feedbackName').value = '';
-    document.getElementById('feedbackEmail').value = '';
+    document.getElementById('feedbackInput').value = '';
     showToast('Thank you for your feedback! 🙏');
-}
-
-function renderFeedbackList() {
-    const container = document.getElementById('feedbackList');
-    if (!container) return;
-    if (!appData.feedbacks?.length) {
-        container.innerHTML = '<div class="text-center py-8 text-gray-500">No feedback yet. Be the first to share!</div>';
-        return;
-    }
-    container.innerHTML = appData.feedbacks.slice(0, 10).map(f => `
-        <div class="bg-gray-50 rounded-lg p-3">
-            <div class="flex justify-between items-start">
-                <div>
-                    <div class="font-semibold text-gray-800">${escapeHtml(f.name)}</div>
-                    <div class="text-gray-600 text-sm mt-1">${escapeHtml(f.text)}</div>
-                </div>
-                <div class="text-xs text-gray-400">${new Date(f.date).toLocaleDateString()}</div>
-            </div>
-            ${f.email !== 'Not provided' ? `<div class="text-xs text-gray-400 mt-1">📧 ${escapeHtml(f.email)}</div>` : ''}
-        </div>
-    `).join('');
 }
 
 // ============ LOGOUT DROPDOWN ============
@@ -468,111 +241,42 @@ function toggleLogoutDropdown() {
     if (dropdown) dropdown.classList.toggle('hidden');
 }
 
-document.addEventListener('click', function(event) {
-    const profileBtn = document.getElementById('userProfileBtn');
-    const dropdown = document.getElementById('logoutDropdown');
-    if (profileBtn && dropdown && !profileBtn.contains(event.target)) {
-        dropdown.classList.add('hidden');
-    }
-});
-
-// ============ GOOGLE SIGN-IN INITIALIZATION ============
-function initializeGoogleSignIn() {
-    if (typeof google !== 'undefined' && google.accounts) {
-        google.accounts.id.initialize({
-            client_id: GOOGLE_CLIENT_ID,
-            callback: handleGoogleCredential,
-            auto_select: false
-        });
-        
-        const loginBtn = document.getElementById('googleLoginBtn');
-        const signupBtn = document.getElementById('googleSignupBtn');
-        
-        if (loginBtn) {
-            google.accounts.id.renderButton(loginBtn, { 
-                theme: 'outline', 
-                size: 'large', 
-                width: '100%',
-                text: 'continue_with'
-            });
-        }
-        
-        if (signupBtn) {
-            google.accounts.id.renderButton(signupBtn, { 
-                theme: 'outline', 
-                size: 'large', 
-                width: '100%',
-                text: 'signup_with'
-            });
-        }
-    }
+// ============ DATA PERSISTENCE ============
+function saveDataImmediately() {
+    if (!currentUser || !appData) return;
+    localStorage.setItem(`growthpilot_data_${currentUser.email}`, JSON.stringify(appData));
 }
 
-// Handle Google Credential Response
-function handleGoogleCredential(response) {
-    try {
-        const credential = response.credential;
-        const decoded = parseJwt(credential);
-        
-        const userInfo = {
-            name: decoded.name,
-            email: decoded.email,
-            picture: decoded.picture,
-            googleId: decoded.sub
-        };
-        
-        let users = JSON.parse(localStorage.getItem('growthpilot_users') || '{}');
-        
-        if (!users[userInfo.email]) {
-            users[userInfo.email] = {
-                name: userInfo.name,
-                email: userInfo.email,
-                picture: userInfo.picture,
-                googleId: userInfo.googleId
-            };
-            localStorage.setItem('growthpilot_users', JSON.stringify(users));
-            showToast(`Welcome ${userInfo.name}! 🎉`);
-        } else {
-            showToast(`Welcome back, ${userInfo.name}! 🎉`);
-        }
-        
-        currentUser = { email: userInfo.email, name: userInfo.name, picture: userInfo.picture };
-        localStorage.setItem('growthpilot_current_user', JSON.stringify(currentUser));
-        
-        document.getElementById('authPage').style.display = 'none';
-        document.getElementById('dashboardPage').style.display = 'block';
-        document.getElementById('mainFooter').style.display = 'block';
-        
+function loadUserData() {
+    const savedUser = localStorage.getItem('growthpilot_current_user');
+    if (!savedUser) return;
+    
+    currentUser = JSON.parse(savedUser);
+    updateUserUI();
+    
+    const savedData = localStorage.getItem(`growthpilot_data_${currentUser.email}`);
+    if (savedData) {
+        appData = { ...getDefaultData(), ...JSON.parse(savedData) };
+    } else {
         appData = getDefaultData();
-        saveDataImmediately();
-        updateUserUI();
-        updateDashboard();
-        renderRoadmap();
-        renderHabits();
-        renderScheduleUI();
-        renderNotes();
-        renderJournals();
-        newReadingPassage();
-        renderCurrentTwister();
-        updateTwisterStats();
-        renderTwisterList();
-        initAnalytics();
-        renderFeedbackList();
-        
-    } catch (error) {
-        console.error('Google login error:', error);
-        showToast('Google login failed. Please try again.', 'error');
     }
+    
+    updateDashboard();
+    renderRoadmap();
+    renderHabits();
+    renderScheduleUI();
+    renderNotes();
+    renderCurrentTwister();
+    updateTwisterStats();
+    renderTwisterList();
+    initAnalytics();
 }
 
-// Parse JWT token
-function parseJwt(token) {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    return JSON.parse(jsonPayload);
+function updateUserUI() {
+    if (!currentUser) return;
+    document.getElementById('userName').innerText = currentUser.name;
+    document.getElementById('userAvatar').innerText = currentUser.name.charAt(0).toUpperCase();
+    document.getElementById('welcomeName').innerHTML = ` ${currentUser.name.split(' ')[0]}! 👋`;
 }
 
 // ============ AUTHENTICATION ============
@@ -625,13 +329,10 @@ function handleSignup() {
     renderHabits();
     renderScheduleUI();
     renderNotes();
-    renderJournals();
-    newReadingPassage();
     renderCurrentTwister();
     updateTwisterStats();
     renderTwisterList();
     initAnalytics();
-    renderFeedbackList();
 }
 
 function handleLogin() {
@@ -669,113 +370,8 @@ function logout() {
         document.getElementById('authPage').style.display = 'flex';
         document.getElementById('dashboardPage').style.display = 'none';
         document.getElementById('mainFooter').style.display = 'none';
-        document.getElementById('loginEmail').value = '';
-        document.getElementById('loginPassword').value = '';
-        document.getElementById('signupName').value = '';
-        document.getElementById('signupEmail').value = '';
-        document.getElementById('signupPassword').value = '';
         showLoginForm();
     }
-}
-
-// ============ DATA PERSISTENCE ============
-function saveDataImmediately() {
-    if (!currentUser || !appData) return;
-    localStorage.setItem(`growthpilot_data_${currentUser.email}`, JSON.stringify(appData));
-}
-
-function loadUserData() {
-    const savedUser = localStorage.getItem('growthpilot_current_user');
-    if (!savedUser) return;
-    
-    currentUser = JSON.parse(savedUser);
-    updateUserUI();
-    
-    const savedData = localStorage.getItem(`growthpilot_data_${currentUser.email}`);
-    if (savedData) {
-        appData = { ...getDefaultData(), ...JSON.parse(savedData) };
-    } else {
-        appData = getDefaultData();
-    }
-    
-    updateDashboard();
-    renderRoadmap();
-    renderHabits();
-    renderScheduleUI();
-    renderNotes();
-    renderJournals();
-    newReadingPassage();
-    renderCurrentTwister();
-    updateTwisterStats();
-    renderTwisterList();
-    initAnalytics();
-    renderFeedbackList();
-}
-
-function updateUserUI() {
-    if (!currentUser) return;
-    document.getElementById('userName').innerText = currentUser.name;
-    document.getElementById('userAvatar').innerText = currentUser.name.charAt(0).toUpperCase();
-    document.getElementById('welcomeName').innerHTML = `${currentUser.name} 👋`;
-    
-    if (isPremiumUser()) {
-        const userLevelEl = document.getElementById('userLevel');
-        if (userLevelEl) {
-            userLevelEl.innerHTML = '⭐ Premium Member';
-            userLevelEl.className = 'text-xs text-yellow-500';
-        }
-        const avatarEl = document.getElementById('userAvatar');
-        if (avatarEl) {
-            avatarEl.style.background = 'linear-gradient(135deg, #f59e0b, #ef4444)';
-        }
-    }
-}
-
-// ============ READING PASSAGES FUNCTION ============
-function newReadingPassage() {
-    currentPassageIdx = (currentPassageIdx + 1) % READING_PASSAGES.length;
-    const passage = READING_PASSAGES[currentPassageIdx];
-    document.getElementById('readingPassage').innerText = passage.text;
-    const levelSpan = document.getElementById('currentLevel');
-    if (levelSpan) {
-        levelSpan.innerText = passage.level;
-        if (passage.level === 'Easy') levelSpan.className = 'text-xs px-3 py-1 bg-green-200 text-green-800 rounded-full';
-        else if (passage.level === 'Medium') levelSpan.className = 'text-xs px-3 py-1 bg-yellow-200 text-yellow-800 rounded-full';
-        else levelSpan.className = 'text-xs px-3 py-1 bg-red-200 text-red-800 rounded-full';
-    }
-}
-
-function speakText() {
-    const text = document.getElementById('readingPassage').innerText;
-    if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
-    }
-}
-
-function recordReadingSpeed() {
-    const seconds = parseInt(document.getElementById('readTimeInput').value);
-    if (!seconds) {
-        showToast('Enter seconds', 'error');
-        return;
-    }
-    const passage = READING_PASSAGES[currentPassageIdx];
-    const wordCount = passage.text.split(' ').length;
-    const wpm = Math.round(wordCount / (seconds / 60));
-    document.getElementById('wpmDisplay').innerText = wpm;
-    
-    let message = `${wpm} WPM! `;
-    if (wpm >= 200) message += '🏆 Expert level! Amazing!';
-    else if (wpm >= 150) message += '🌟 Advanced level! Great job!';
-    else if (wpm >= 100) message += '👍 Intermediate level! Keep practicing!';
-    else message += '💪 Keep practicing to improve your speed!';
-    showToast(message);
-    
-    if (!appData.english) appData.english = { speeds: [] };
-    appData.english.speeds.push({ date: new Date().toISOString(), wpm, passage: passage.level });
-    saveDataImmediately();
 }
 
 // ============ DASHBOARD ============
@@ -849,7 +445,7 @@ function updateDashboard() {
                 labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                 datasets: [{
                     label: 'Hours',
-                    data: [0, 0, 0, 0, 0, 0, 0],
+                    data: [2, 3, 4, 3, 5, 4, 2],
                     backgroundColor: '#6366f1',
                     borderRadius: 8
                 }]
@@ -892,12 +488,10 @@ function initAnalytics() {
     
     const insights = document.getElementById('insightsContainer');
     if (insights) {
-        const today = getTodayKey();
-        const todayMins = (appData.studyMinutes?.[today] || 0) / 60;
         insights.innerHTML = `
-            <div class="bg-indigo-50 rounded-lg p-4"><p class="text-indigo-800 font-semibold mb-2">📊 Today's Activity</p><p class="text-gray-600">You studied ${todayMins.toFixed(1)} hours today. ${todayMins < 1 ? 'Try to study at least 1 hour daily!' : 'Great job! Keep it up!'}</p></div>
-            <div class="bg-indigo-50 rounded-lg p-4"><p class="text-indigo-800 font-semibold mb-2">💡 Pro Tip</p><p class="text-gray-600">Complete your daily habits and roadmap topics to unlock achievements and increase your streak!</p></div>
-            <div class="bg-indigo-50 rounded-lg p-4"><p class="text-indigo-800 font-semibold mb-2">🎯 Reading Challenge</p><p class="text-gray-600">We have ${READING_PASSAGES.length} reading passages from Easy to Hard. Practice daily to improve your English fluency!</p></div>
+            <div class="bg-indigo-50 rounded-lg p-4"><p class="text-indigo-800 font-semibold mb-2">📊 Keep Going!</p><p class="text-gray-600">Complete daily tasks to increase your streak and earn XP!</p></div>
+            <div class="bg-indigo-50 rounded-lg p-4"><p class="text-indigo-800 font-semibold mb-2">💡 Pro Tip</p><p class="text-gray-600">Complete your daily habits and roadmap topics to unlock achievements!</p></div>
+            <div class="bg-indigo-50 rounded-lg p-4"><p class="text-indigo-800 font-semibold mb-2">🎯 Reading Challenge</p><p class="text-gray-600">Practice English reading daily to improve your fluency!</p></div>
         `;
     }
 }
@@ -912,12 +506,24 @@ function renderScheduleUI() {
     const html = items.length ? items.map(i => `
         <div class="flex items-center gap-3 py-2 border-b border-gray-100">
             <span class="text-indigo-600 font-mono text-sm w-16">${i.start}</span>
-            <div class="flex-1 px-3 py-2 rounded-lg cursor-pointer ${i.completed ? 'bg-green-50 line-through text-gray-400' : 'bg-indigo-50'}" onclick="toggleTask('${i.id}')">${escapeHtml(i.activity)}</div>
+            <div class="flex-1 px-3 py-2 rounded-lg cursor-pointer transition ${i.completed ? 'bg-green-50 line-through text-gray-400' : 'bg-indigo-50 hover:bg-indigo-100'}" onclick="toggleTask('${i.id}')">${escapeHtml(i.activity)}</div>
+            <button onclick="deleteTask('${i.id}')" class="text-red-400 hover:text-red-600 px-2">🗑️</button>
         </div>
-    `).join('') : '<p class="text-gray-500 text-center py-8">No blocks scheduled</p>';
+    `).join('') : '<p class="text-gray-500 text-center py-8">No blocks scheduled. Click "+ Add Block" to create your first schedule!</p>';
     
     if (container) container.innerHTML = html;
     if (fullContainer) fullContainer.innerHTML = html;
+    
+    const studyBlocks = items.length;
+    const totalHours = items.reduce((total, item) => {
+        const [sh, sm] = item.start.split(':').map(Number);
+        const [eh, em] = item.end.split(':').map(Number);
+        return total + ((eh * 60 + em) - (sh * 60 + sm)) / 60;
+    }, 0);
+    
+    if (document.getElementById('studyBlocks')) document.getElementById('studyBlocks').innerText = studyBlocks;
+    if (document.getElementById('totalPlanned')) document.getElementById('totalPlanned').innerText = totalHours.toFixed(1) + 'h';
+    if (document.getElementById('breakTime')) document.getElementById('breakTime').innerText = Math.floor(studyBlocks * 0.25) + 'h';
 }
 
 function toggleTask(id) {
@@ -929,13 +535,22 @@ function toggleTask(id) {
             const [eh, em] = task.end.split(':').map(Number);
             const mins = (eh * 60 + em) - (sh * 60 + sm);
             const today = getTodayKey();
+            if (!appData.studyMinutes) appData.studyMinutes = {};
             appData.studyMinutes[today] = (appData.studyMinutes[today] || 0) + mins;
         }
         saveDataImmediately();
         renderScheduleUI();
         updateDashboard();
-        showToast(task.completed ? 'Task completed! 🎉' : 'Task unmarked');
+        showToast(task.completed ? 'Task completed! 🎉 +' + Math.floor(((task.end.split(':')[0] * 60 + parseInt(task.end.split(':')[1])) - (task.start.split(':')[0] * 60 + parseInt(task.start.split(':')[1]))) / 60) + ' hours studied!' : 'Task unmarked');
     }
+}
+
+function deleteTask(id) {
+    appData.schedule = appData.schedule.filter(s => s.id !== id);
+    saveDataImmediately();
+    renderScheduleUI();
+    updateDashboard();
+    showToast('Task deleted');
 }
 
 function addScheduleBlock() {
@@ -949,6 +564,7 @@ function addScheduleBlock() {
         return;
     }
     
+    if (!appData.schedule) appData.schedule = [];
     appData.schedule.push({
         id: Date.now().toString(),
         date: getTodayKey(),
@@ -958,7 +574,11 @@ function addScheduleBlock() {
     closeModal('scheduleModal');
     renderScheduleUI();
     updateDashboard();
-    showToast('Block added!');
+    showToast('Schedule block added successfully! ✅');
+    
+    document.getElementById('scheduleStart').value = '09:00';
+    document.getElementById('scheduleEnd').value = '10:00';
+    document.getElementById('scheduleActivity').value = '';
 }
 
 function openAddScheduleModal() {
@@ -972,54 +592,58 @@ function applyTemplate(type) {
     const today = getTodayKey();
     const templates = {
         developer: [
-            { start: '09:00', end: '11:00', activity: 'Frontend Study', category: 'coding' },
+            { start: '09:00', end: '11:00', activity: 'Frontend Development', category: 'coding' },
             { start: '11:00', end: '11:30', activity: 'Break', category: 'break' },
-            { start: '11:30', end: '13:30', activity: 'Backend Study', category: 'coding' },
-            { start: '14:00', end: '15:30', activity: 'AI/ML', category: 'ai' },
-            { start: '15:30', end: '16:30', activity: 'English', category: 'english' }
+            { start: '11:30', end: '13:30', activity: 'Backend Development', category: 'coding' },
+            { start: '14:00', end: '15:30', activity: 'Data Structures & Algorithms', category: 'coding' },
+            { start: '15:30', end: '16:30', activity: 'Project Work', category: 'coding' }
         ],
         student: [
-            { start: '09:00', end: '11:00', activity: 'Core Study', category: 'study' },
-            { start: '11:30', end: '13:30', activity: 'Web Dev', category: 'coding' },
-            { start: '14:00', end: '15:30', activity: 'AI Concepts', category: 'ai' }
+            { start: '09:00', end: '11:00', activity: 'Core Subject Study', category: 'study' },
+            { start: '11:30', end: '13:30', activity: 'Programming Practice', category: 'coding' },
+            { start: '14:00', end: '15:30', activity: 'Assignment Work', category: 'study' },
+            { start: '15:30', end: '16:30', activity: 'Revision', category: 'study' }
         ],
         balanced: [
-            { start: '08:00', end: '09:00', activity: 'Exercise', category: 'exercise' },
-            { start: '09:30', end: '11:30', activity: 'Learning', category: 'study' },
-            { start: '13:00', end: '15:00', activity: 'Coding', category: 'coding' },
-            { start: '15:00', end: '16:00', activity: 'English', category: 'english' }
+            { start: '08:00', end: '09:00', activity: 'Morning Exercise', category: 'break' },
+            { start: '09:30', end: '11:30', activity: 'Deep Work Session', category: 'study' },
+            { start: '13:00', end: '15:00', activity: 'Skill Development', category: 'coding' },
+            { start: '15:00', end: '16:00', activity: 'English Practice', category: 'english' },
+            { start: '16:00', end: '17:00', activity: 'Planning & Review', category: 'study' }
         ]
     };
-    const blocks = (templates[type] || []).map(t => ({
+    
+    const blocks = (templates[type] || templates.developer).map(t => ({
         id: Date.now().toString() + Math.random(),
         date: today, ...t, completed: false
     }));
-    appData.schedule = (appData.schedule || []).filter(s => s.date !== today).concat(blocks);
+    
+    const existingToday = (appData.schedule || []).filter(s => s.date !== today);
+    appData.schedule = [...existingToday, ...blocks];
     saveDataImmediately();
     renderScheduleUI();
     updateDashboard();
-    showToast(type + ' template applied!');
+    showToast(type.charAt(0).toUpperCase() + type.slice(1) + ' template applied! 📅');
 }
 
 // ============ ROADMAP ============
 function renderRoadmap() {
     const container = document.getElementById('roadmapContainer');
     if (!container) return;
-    let total = 0, done = 0;
+    
     container.innerHTML = ROADMAP_DATA.map((month, mi) => `
-        <div class="min-w-[320px] bg-indigo-50 rounded-xl overflow-hidden">
-            <div class="p-4 bg-gradient-to-r from-indigo-200 to-purple-200 border-b border-indigo-200">
+        <div class="bg-indigo-50 rounded-xl overflow-hidden">
+            <div class="p-4 bg-gradient-to-r from-indigo-200 to-purple-200">
                 <h3 class="font-semibold text-gray-800">${month.month}</h3>
             </div>
-            <div class="p-2 space-y-1">
+            <div class="p-3 space-y-2">
                 ${month.topics.map((topic, ti) => {
                     const key = mi + '-' + ti;
                     const completed = appData.roadmapCompleted?.[key];
-                    total++; if (completed) done++;
                     return `
-                        <div class="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-indigo-100 transition ${completed ? 'opacity-60' : ''}" onclick="toggleRoadmapTopic('${key}')">
-                            <div class="w-5 h-5 rounded-full border-2 ${completed ? 'bg-green-500 border-green-500' : 'border-gray-300'} flex items-center justify-center text-xs text-white">${completed ? '✓' : ''}</div>
-                            <div><div class="text-gray-800 text-sm">${escapeHtml(topic.name)}</div><div class="text-gray-400 text-xs">${topic.duration}</div></div>
+                        <div class="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-indigo-100 transition ${completed ? 'opacity-60' : ''}" onclick="toggleRoadmapTopic('${key}')">
+                            <div class="w-5 h-5 rounded-full border-2 ${completed ? 'bg-green-500 border-green-500' : 'border-gray-400'} flex items-center justify-center text-xs text-white">${completed ? '✓' : ''}</div>
+                            <div><div class="text-gray-800 text-sm font-medium">${escapeHtml(topic.name)}</div><div class="text-gray-400 text-xs">${topic.duration}</div></div>
                         </div>
                     `;
                 }).join('')}
@@ -1030,20 +654,21 @@ function renderRoadmap() {
 
 function toggleRoadmapTopic(key) {
     if (!appData.roadmapCompleted) appData.roadmapCompleted = {};
-    appData.roadmapCompleted[key] = !appData.roadmapCompleted[key];
+    const wasCompleted = appData.roadmapCompleted[key];
+    appData.roadmapCompleted[key] = !wasCompleted;
     saveDataImmediately();
     renderRoadmap();
     updateDashboard();
-    showToast(appData.roadmapCompleted[key] ? 'Topic completed! 🎉' : 'Topic unmarked');
+    showToast(appData.roadmapCompleted[key] ? 'Topic completed! 🎉 +50 XP' : 'Topic unmarked');
 }
 
 function resetRoadmap() {
-    if (confirm('Reset all roadmap progress?')) {
+    if (confirm('Reset all roadmap progress? This cannot be undone.')) {
         appData.roadmapCompleted = {};
         saveDataImmediately();
         renderRoadmap();
         updateDashboard();
-        showToast('Roadmap reset');
+        showToast('Roadmap has been reset');
     }
 }
 
@@ -1051,9 +676,11 @@ function resetRoadmap() {
 function renderHabits() {
     const container = document.getElementById('habitTrackerContainer');
     if (!container) return;
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
     const weekDates = (() => {
-        let today = new Date(), day = today.getDay(), diff = today.getDate() - day + (day === 0 ? -6 : 1);
+        let today = new Date();
+        let day = today.getDay();
+        let diff = today.getDate() - day + (day === 0 ? -6 : 1);
         let monday = new Date(today);
         monday.setDate(diff);
         return Array.from({ length: 7 }, (_, i) => {
@@ -1063,34 +690,44 @@ function renderHabits() {
         });
     })();
     
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
     if (!appData.habits?.length) {
-        container.innerHTML = '<div class="text-center py-8 text-gray-500">Add habits to start</div>';
+        container.innerHTML = '<div class="text-center py-8 text-gray-500">No habits yet. Click "+ Add Habit" to get started!</div>';
         return;
     }
     
-    let html = '<div class="overflow-x-auto"><div class="grid grid-cols-8 gap-2 min-w-[600px]"><div></div>' +
-        days.map(d => `<div class="text-center text-xs text-gray-500 font-semibold py-2">${d}</div>`).join('');
+    let html = '<div class="overflow-x-auto"><table class="w-full min-w-[800px]"><thead><tr><th class="text-left py-2 px-2">Habit</th>';
+    days.forEach(day => { html += `<th class="text-center py-2 px-2 text-sm text-gray-500">${day}</th>`; });
+    html += '</tr></thead><tbody>';
     
     appData.habits.forEach(habit => {
-        html += `<div class="flex items-center gap-2 col-span-8 py-2"><span class="text-xl">${habit.icon}</span><span class="text-sm text-gray-700">${escapeHtml(habit.name)}</span></div>`;
+        html += `<tr class="border-b border-gray-100"><td class="py-3 px-2"><span class="text-xl mr-2">${habit.icon}</span><span class="text-gray-700">${escapeHtml(habit.name)}</span></td>`;
         weekDates.forEach(date => {
             const key = date.toISOString().split('T')[0];
             const isToday = key === getTodayKey();
             const isDone = habit.completed?.includes(key);
-            html += `<div class="aspect-square bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-indigo-100 transition ${isDone ? 'bg-indigo-200' : ''} ${isToday ? 'ring-2 ring-indigo-500' : ''}" onclick="toggleHabit(${habit.id},'${key}')">${isDone ? '✓' : ''}</div>`;
+            html += `<td class="text-center py-2"><div class="inline-block w-8 h-8 rounded-full cursor-pointer transition ${isDone ? 'bg-green-500 text-white' : 'bg-gray-100 hover:bg-indigo-100'} flex items-center justify-center ${isToday ? 'ring-2 ring-indigo-500' : ''}" onclick="toggleHabitDay(${habit.id},'${key}')">${isDone ? '✓' : ''}</div></td>`;
         });
+        html += '</tr>';
     });
-    html += '</div></div>';
+    html += '</tbody></table></div>';
     container.innerHTML = html;
     updateAchievements();
 }
 
-function toggleHabit(id, date) {
+function toggleHabitDay(id, date) {
     const habit = appData.habits.find(h => h.id == id);
     if (habit) {
         if (!habit.completed) habit.completed = [];
         const idx = habit.completed.indexOf(date);
-        idx >= 0 ? habit.completed.splice(idx, 1) : habit.completed.push(date);
+        if (idx >= 0) {
+            habit.completed.splice(idx, 1);
+            showToast(`Unmarked ${habit.name} for ${date}`);
+        } else {
+            habit.completed.push(date);
+            showToast(`✅ ${habit.name} completed for ${date}! +10 XP`);
+        }
         saveDataImmediately();
         renderHabits();
         updateDashboard();
@@ -1101,14 +738,16 @@ function addHabit() {
     const name = document.getElementById('habitName').value.trim();
     const icon = document.getElementById('habitIcon').value.trim() || '📌';
     if (!name) {
-        showToast('Enter habit name', 'error');
+        showToast('Please enter a habit name', 'error');
         return;
     }
     appData.habits.push({ id: Date.now(), name: name, icon: icon, completed: [] });
     saveDataImmediately();
     closeModal('habitModal');
     renderHabits();
-    showToast('Habit added!');
+    showToast(`Habit "${name}" added successfully!`);
+    document.getElementById('habitName').value = '';
+    document.getElementById('habitIcon').value = '📌';
 }
 
 function openAddHabitModal() {
@@ -1119,112 +758,114 @@ function updateAchievements() {
     const container = document.getElementById('achievementsContainer');
     if (!container) return;
     
-    let aiDone = false;
-    ROADMAP_DATA.forEach((m, i) => {
-        m.topics.forEach((t, j) => {
-            if (t.cat === 'ai' && appData.roadmapCompleted?.[i + '-' + j]) aiDone = true;
-        });
-    });
-    
     const achievements = [
         { name: 'First Step', desc: 'Complete first habit', icon: '🌱', check: appData.habits.some(h => h.completed?.length > 0) },
         { name: 'Streak Master', desc: '3 day streak', icon: '🔥', check: appData.streak >= 3 },
-        { name: 'Language Lover', desc: '5 twisters', icon: '🗣️', check: (appData.twisters?.easy?.length + appData.twisters?.medium?.length + appData.twisters?.hard?.length) >= 5 },
-        { name: 'Code Warrior', desc: '5 topics', icon: '💻', check: Object.values(appData.roadmapCompleted || {}).filter(Boolean).length >= 5 },
-        { name: 'AI Explorer', desc: 'First AI topic', icon: '🤖', check: aiDone }
+        { name: 'Language Lover', desc: 'Master 3 twisters', icon: '🗣️', check: (appData.twisters?.easy?.length + appData.twisters?.medium?.length + appData.twisters?.hard?.length) >= 3 },
+        { name: 'Code Warrior', desc: 'Complete 5 roadmap topics', icon: '💻', check: Object.values(appData.roadmapCompleted || {}).filter(Boolean).length >= 5 }
     ];
     
     container.innerHTML = achievements.map(a => `
-        <div class="flex items-center gap-3 p-3 ${a.check ? 'bg-indigo-50' : 'bg-gray-50'} rounded-lg">
+        <div class="flex items-center gap-3 p-3 ${a.check ? 'bg-indigo-50' : 'bg-gray-50'} rounded-lg transition">
             <div class="text-2xl">${a.icon}</div>
             <div class="flex-1">
                 <div class="font-semibold text-gray-800">${a.check ? '🏆 ' : '🔒 '}${a.name}</div>
                 <div class="text-xs text-gray-500">${a.desc}</div>
             </div>
-            ${a.check ? '<div class="text-green-500">✓</div>' : '<div class="text-gray-400">⚡</div>'}
+            ${a.check ? '<div class="text-green-500 text-xl">✓</div>' : '<div class="text-gray-400">⚡</div>'}
         </div>
     `).join('');
 }
 
 // ============ NOTES ============
 function renderNotes() {
-    const container = document.getElementById('notesList');
+    const container = document.getElementById('notesContainer');
     if (!container) return;
+    
     if (!appData.notes?.length) {
-        container.innerHTML = '<div class="text-center py-8 text-gray-500">No notes yet</div>';
+        container.innerHTML = '<div class="text-center py-8 text-gray-500 col-span-3">No notes yet. Click "+ New Note" to create your first note!</div>';
         return;
     }
+    
     container.innerHTML = appData.notes.map(n => `
-        <div class="bg-white rounded-lg p-3 flex justify-between items-center shadow-sm border border-gray-100">
-            <div><div class="text-gray-800 text-sm">${escapeHtml(n.text)}</div><div class="text-gray-400 text-xs">${new Date(n.date).toLocaleDateString()}</div></div>
-            <button class="text-red-400 hover:text-red-500" onclick="deleteNote('${n.id}')">🗑️</button>
+        <div class="bg-white border border-gray-200 rounded-xl p-4 note-card shadow-sm hover:shadow-md transition">
+            <div class="flex justify-between items-start">
+                <h3 class="font-semibold text-gray-800">${escapeHtml(n.title)}</h3>
+                <button onclick="deleteNote('${n.id}')" class="text-red-400 hover:text-red-600 text-sm">🗑️</button>
+            </div>
+            <p class="text-gray-600 text-sm mt-2">${escapeHtml(n.content.substring(0, 120))}${n.content.length > 120 ? '...' : ''}</p>
+            <div class="text-gray-400 text-xs mt-2">${new Date(n.date).toLocaleDateString()}</div>
         </div>
     `).join('');
 }
 
-function addNote() {
-    const input = document.getElementById('noteInput');
-    if (!input.value.trim()) {
-        showToast('Write something', 'error');
-        return;
-    }
+function openAddNoteModal() {
+    const title = prompt('Enter note title:');
+    if (!title) return;
+    const content = prompt('Enter note content:');
+    if (!content) return;
+    
     if (!appData.notes) appData.notes = [];
-    appData.notes.unshift({
-        id: Date.now().toString(),
-        text: input.value.trim(),
-        date: new Date().toISOString()
-    });
+    appData.notes.unshift({ id: Date.now().toString(), title, content, date: new Date().toISOString() });
     saveDataImmediately();
-    input.value = '';
     renderNotes();
-    showToast('Note added!');
+    showToast('Note saved successfully! 📝');
 }
 
 function deleteNote(id) {
-    appData.notes = appData.notes.filter(n => n.id !== id);
-    saveDataImmediately();
-    renderNotes();
+    if (confirm('Delete this note?')) {
+        appData.notes = appData.notes.filter(n => n.id !== id);
+        saveDataImmediately();
+        renderNotes();
+        showToast('Note deleted');
+    }
 }
 
-// ============ JOURNAL ============
-function saveJournal() {
-    const text = document.getElementById('journalInput').value.trim();
-    if (!text) {
-        showToast('Write something', 'error');
+// ============ READING PASSAGES ============
+function newReadingPassage() {
+    currentPassageIdx = (currentPassageIdx + 1) % READING_PASSAGES.length;
+    const passage = READING_PASSAGES[currentPassageIdx];
+    document.getElementById('readingPassage').innerText = passage.text;
+    const levelSpan = document.getElementById('currentLevel');
+    if (levelSpan) {
+        levelSpan.innerText = passage.level;
+        if (passage.level === 'Easy') levelSpan.className = 'text-xs px-3 py-1 bg-green-200 text-green-800 rounded-full';
+        else if (passage.level === 'Medium') levelSpan.className = 'text-xs px-3 py-1 bg-yellow-200 text-yellow-800 rounded-full';
+        else levelSpan.className = 'text-xs px-3 py-1 bg-red-200 text-red-800 rounded-full';
+    }
+}
+
+function speakText() {
+    const text = document.getElementById('readingPassage').innerText;
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+function recordReadingSpeed() {
+    const seconds = parseInt(document.getElementById('readTimeInput').value);
+    if (!seconds || seconds <= 0) {
+        showToast('Please enter valid seconds', 'error');
         return;
     }
-    if (!appData.journals) appData.journals = [];
-    appData.journals.unshift({
-        id: Date.now().toString(),
-        text: text,
-        mood: selectedMood || '😐',
-        date: new Date().toISOString()
-    });
+    const passage = READING_PASSAGES[currentPassageIdx];
+    const wordCount = passage.text.split(' ').length;
+    const wpm = Math.round((wordCount / seconds) * 60);
+    document.getElementById('wpmDisplay').innerText = wpm;
+    
+    let message = `${wpm} WPM! `;
+    if (wpm >= 200) message += '🏆 Expert level! Amazing!';
+    else if (wpm >= 150) message += '🌟 Advanced level! Great job!';
+    else if (wpm >= 100) message += '👍 Intermediate level! Keep practicing!';
+    else message += '💪 Keep practicing to improve your speed!';
+    showToast(message);
+    
+    if (!appData.english) appData.english = { speeds: [] };
+    appData.english.speeds.push({ date: new Date().toISOString(), wpm, passage: passage.level });
     saveDataImmediately();
-    document.getElementById('journalInput').value = '';
-    renderJournals();
-    showToast('Journal saved!');
-}
-
-function renderJournals() {
-    const container = document.getElementById('journalHistory');
-    if (!container) return;
-    if (!appData.journals?.length) {
-        container.innerHTML = '<div class="text-center py-8 text-gray-500">No journal entries</div>';
-        return;
-    }
-    container.innerHTML = appData.journals.slice(0, 5).map(j => `
-        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-            <div class="text-gray-800 text-sm">${j.mood} ${escapeHtml(j.text.substring(0, 70))}</div>
-            <div class="text-gray-400 text-xs mt-1">${new Date(j.date).toLocaleDateString()}</div>
-        </div>
-    `).join('');
-}
-
-function selectMood(el, mood) {
-    document.querySelectorAll('#moodSelector span').forEach(s => s.style.transform = 'scale(1)');
-    el.style.transform = 'scale(1.2)';
-    selectedMood = mood;
 }
 
 // ============ TONGUE TWISTERS ============
@@ -1245,39 +886,55 @@ function nextTwister() {
     renderCurrentTwister();
 }
 
+function speakTwister() {
+    const text = TONGUE_TWISTERS[currentTwisterIdx].text;
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.7;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
 function markTwisterComplete() {
     const twister = TONGUE_TWISTERS[currentTwisterIdx];
     if (!appData.twisters) appData.twisters = { streak: 0, easy: [], medium: [], hard: [] };
     
+    let isNew = false;
     if (twister.difficulty === 'easy' && !appData.twisters.easy.includes(twister.text)) {
         appData.twisters.easy.push(twister.text);
+        isNew = true;
+        showToast('🎉 Easy twister mastered! +25 XP');
     } else if (twister.difficulty === 'medium' && !appData.twisters.medium.includes(twister.text)) {
         appData.twisters.medium.push(twister.text);
+        isNew = true;
+        showToast('🌟 Medium twister mastered! +50 XP');
     } else if (twister.difficulty === 'hard' && !appData.twisters.hard.includes(twister.text)) {
         appData.twisters.hard.push(twister.text);
+        isNew = true;
+        showToast('🔥 Hard twister mastered! +100 XP');
+    } else {
+        showToast('You already mastered this twister! Keep practicing!');
+        return;
     }
-    appData.twisters.streak++;
-    saveDataImmediately();
-    updateTwisterStats();
-    renderTwisterList();
-    showToast('Twister mastered! 🎤');
-    nextTwister();
+    
+    if (isNew) {
+        appData.twisters.streak++;
+        saveDataImmediately();
+        updateTwisterStats();
+        renderTwisterList();
+        nextTwister();
+    }
 }
 
 function updateTwisterStats() {
     if (!appData.twisters) appData.twisters = { streak: 0, easy: [], medium: [], hard: [] };
-    document.getElementById('twisterStreak').innerText = appData.twisters.streak;
-    document.getElementById('easyCount').innerText = appData.twisters.easy.length;
-    document.getElementById('mediumCount').innerText = appData.twisters.medium.length;
-    document.getElementById('hardCount').innerText = appData.twisters.hard.length;
-    
-    const easyTotal = TONGUE_TWISTERS.filter(t => t.difficulty === 'easy').length;
-    const mediumTotal = TONGUE_TWISTERS.filter(t => t.difficulty === 'medium').length;
-    const hardTotal = TONGUE_TWISTERS.filter(t => t.difficulty === 'hard').length;
-    
-    document.getElementById('easyBar').style.width = Math.min((appData.twisters.easy.length / easyTotal) * 100, 100) + '%';
-    document.getElementById('mediumBar').style.width = Math.min((appData.twisters.medium.length / mediumTotal) * 100, 100) + '%';
-    document.getElementById('hardBar').style.width = Math.min((appData.twisters.hard.length / hardTotal) * 100, 100) + '%';
+    const totalMastered = appData.twisters.easy.length + appData.twisters.medium.length + appData.twisters.hard.length;
+    document.getElementById('masteredCount').innerText = totalMastered;
+    document.getElementById('bestTwisterStreak').innerText = appData.twisters.streak;
+    document.getElementById('totalTwisterAttempts').innerText = totalMastered;
+    const masteryPercent = (totalMastered / TONGUE_TWISTERS.length) * 100;
+    document.getElementById('masteryBar').style.width = masteryPercent + '%';
 }
 
 function renderTwisterList() {
@@ -1288,8 +945,8 @@ function renderTwisterList() {
                      appData.twisters?.medium?.includes(t.text) ||
                      appData.twisters?.hard?.includes(t.text);
         return `
-            <div class="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:bg-indigo-50 transition shadow-sm border border-gray-100" onclick="currentTwisterIdx=${i};renderCurrentTwister();">
-                <span class="text-gray-700">${done ? '✅' : '⬜'} ${t.text}</span>
+            <div class="flex items-center justify-between p-3 bg-white rounded-lg cursor-pointer hover:bg-indigo-50 transition shadow-sm border border-gray-100" onclick="currentTwisterIdx=${i};renderCurrentTwister();navigateTo('tonguetwisters')">
+                <span class="text-gray-700 text-sm">${done ? '✅' : '⬜'} ${t.text.substring(0, 40)}${t.text.length > 40 ? '...' : ''}</span>
                 <span class="text-xs px-2 py-1 rounded-full ${t.difficulty === 'easy' ? 'bg-green-100 text-green-600' : t.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'}">${t.difficulty}</span>
             </div>
         `;
@@ -1302,7 +959,8 @@ function setTimer(minutes) {
     timerRunning = false;
     timerSeconds = minutes * 60;
     document.getElementById('timerDisplay').innerText = formatTime(timerSeconds);
-    document.getElementById('timerStartBtn').innerHTML = '▶ Start';
+    const btn = document.getElementById('timerStartBtn');
+    if (btn) btn.innerHTML = '▶ Start';
 }
 
 function toggleTimer() {
@@ -1310,22 +968,27 @@ function toggleTimer() {
     if (timerRunning) {
         clearInterval(timerInterval);
         timerRunning = false;
-        btn.innerHTML = '▶ Resume';
+        if (btn) btn.innerHTML = '▶ Resume';
+        showToast('Timer paused');
     } else {
         timerRunning = true;
-        btn.innerHTML = '⏸ Pause';
+        if (btn) btn.innerHTML = '⏸ Pause';
         timerInterval = setInterval(() => {
-            timerSeconds--;
-            document.getElementById('timerDisplay').innerText = formatTime(timerSeconds);
             if (timerSeconds <= 0) {
                 clearInterval(timerInterval);
                 timerRunning = false;
-                showToast('Timer done! ☕');
+                showToast('🎉 Timer completed! Great work! +25 XP');
+                if (btn) btn.innerHTML = '▶ Start';
                 const today = getTodayKey();
+                if (!appData.studyMinutes) appData.studyMinutes = {};
                 appData.studyMinutes[today] = (appData.studyMinutes[today] || 0) + 25;
                 saveDataImmediately();
                 updateDashboard();
-                btn.innerHTML = '▶ Start';
+                timerSeconds = 25 * 60;
+                document.getElementById('timerDisplay').innerText = formatTime(timerSeconds);
+            } else {
+                timerSeconds--;
+                document.getElementById('timerDisplay').innerText = formatTime(timerSeconds);
             }
         }, 1000);
     }
@@ -1336,13 +999,135 @@ function resetTimer() {
     timerRunning = false;
     timerSeconds = 25 * 60;
     document.getElementById('timerDisplay').innerText = formatTime(timerSeconds);
-    document.getElementById('timerStartBtn').innerHTML = '▶ Start';
+    const btn = document.getElementById('timerStartBtn');
+    if (btn) btn.innerHTML = '▶ Start';
+    showToast('Timer reset to 25 minutes');
 }
 
 function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// ============ PREMIUM ============
+function initiatePremiumPayment() {
+    alert('Premium demo: In production, this would integrate with Razorpay/PayPal.\n\nPremium features include:\n• Unlimited notes\n• Advanced analytics\n• Priority support\n\nThank you for supporting GrowthPilot! 🚀');
+    showToast('Premium feature demo - upgrade to unlock all features!');
+}
+
+// ============ GOOGLE SIGN-IN ============
+function initializeGoogleSignIn() {
+    if (typeof google !== 'undefined' && google.accounts) {
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleCredential,
+            auto_select: false
+        });
+        
+        const loginBtn = document.getElementById('googleLoginBtn');
+        const signupBtn = document.getElementById('googleSignupBtn');
+        
+        if (loginBtn) {
+            google.accounts.id.renderButton(loginBtn, { 
+                theme: 'outline', 
+                size: 'large', 
+                width: '100%',
+                text: 'continue_with'
+            });
+        }
+        
+        if (signupBtn) {
+            google.accounts.id.renderButton(signupBtn, { 
+                theme: 'outline', 
+                size: 'large', 
+                width: '100%',
+                text: 'signup_with'
+            });
+        }
+    } else {
+        console.log('Google Sign-In not loaded yet, retrying...');
+        setTimeout(initializeGoogleSignIn, 500);
+    }
+}
+
+function handleGoogleCredential(response) {
+    try {
+        const credential = response.credential;
+        const decoded = parseJwt(credential);
+        
+        const userInfo = {
+            name: decoded.name,
+            email: decoded.email,
+            picture: decoded.picture,
+            googleId: decoded.sub
+        };
+        
+        let users = JSON.parse(localStorage.getItem('growthpilot_users') || '{}');
+        
+        if (!users[userInfo.email]) {
+            users[userInfo.email] = {
+                name: userInfo.name,
+                email: userInfo.email,
+                picture: userInfo.picture,
+                googleId: userInfo.googleId
+            };
+            localStorage.setItem('growthpilot_users', JSON.stringify(users));
+            showToast(`Welcome ${userInfo.name}! 🎉`);
+        } else {
+            showToast(`Welcome back, ${userInfo.name}! 🎉`);
+        }
+        
+        currentUser = { email: userInfo.email, name: userInfo.name, picture: userInfo.picture };
+        localStorage.setItem('growthpilot_current_user', JSON.stringify(currentUser));
+        
+        document.getElementById('authPage').style.display = 'none';
+        document.getElementById('dashboardPage').style.display = 'block';
+        document.getElementById('mainFooter').style.display = 'block';
+        
+        appData = getDefaultData();
+        saveDataImmediately();
+        updateUserUI();
+        updateDashboard();
+        renderRoadmap();
+        renderHabits();
+        renderScheduleUI();
+        renderNotes();
+        renderCurrentTwister();
+        updateTwisterStats();
+        renderTwisterList();
+        initAnalytics();
+        
+    } catch (error) {
+        console.error('Google login error:', error);
+        showToast('Google login failed. Please try again.', 'error');
+    }
+}
+
+function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+}
+
+// ============ DARK MODE ============
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkModeToggle');
+    if (document.body.classList.contains('dark-mode')) {
+        localStorage.setItem('darkMode', 'enabled');
+        if (btn) {
+            btn.innerHTML = '☀️';
+        }
+    } else {
+        localStorage.setItem('darkMode', 'disabled');
+        if (btn) {
+            btn.innerHTML = '🌙';
+        }
+    }
 }
 
 // ============ AUTO-SAVE ============
@@ -1366,8 +1151,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Initialize Google Sign-In
+    document.addEventListener('click', function(event) {
+        const profileBtn = document.getElementById('userProfileBtn');
+        const dropdown = document.getElementById('logoutDropdown');
+        if (profileBtn && dropdown && !profileBtn.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    
     initializeGoogleSignIn();
+    
+    const darkMode = localStorage.getItem('darkMode');
+    if (darkMode === 'enabled') {
+        document.body.classList.add('dark-mode');
+        const toggleBtn = document.getElementById('darkModeToggle');
+        if (toggleBtn) toggleBtn.innerHTML = '☀️';
+    }
     
     if (savedUser) {
         try {
@@ -1394,38 +1193,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chatToggle) {
         chatToggle.addEventListener('click', toggleChat);
     }
-    
     const chatInput = document.getElementById('chatInput');
     if (chatInput) {
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendChatMessage();
         });
     }
-    
-    // Dark Mode initialization
-    const darkMode = localStorage.getItem('darkMode');
-    if (darkMode === 'enabled') {
-        document.body.classList.add('dark-mode');
-        document.getElementById('darkModeToggle').innerHTML = '☀️';
-    }
 });
 
-// ============ DARK MODE TOGGLE ============
-function toggleDarkMode() {
-    document.body.classList.toggle('dark-mode');
-    const btn = document.getElementById('darkModeToggle');
-    if (document.body.classList.contains('dark-mode')) {
-        localStorage.setItem('darkMode', 'enabled');
-        btn.innerHTML = '☀️';
-        btn.style.background = '#8b5cf6';
-    } else {
-        localStorage.setItem('darkMode', 'disabled');
-        btn.innerHTML = '🌙';
-        btn.style.background = '#4f46e5';
-    }
-}
-
-// ============ EXPOSE FUNCTIONS ============
+// ============ EXPOSE GLOBAL FUNCTIONS ============
 window.toggleSidebar = toggleSidebar;
 window.navigateTo = navigateTo;
 window.showLoginForm = showLoginForm;
@@ -1436,29 +1212,28 @@ window.logout = logout;
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.toggleTask = toggleTask;
+window.deleteTask = deleteTask;
 window.addScheduleBlock = addScheduleBlock;
 window.openAddScheduleModal = openAddScheduleModal;
 window.applyTemplate = applyTemplate;
 window.toggleRoadmapTopic = toggleRoadmapTopic;
 window.resetRoadmap = resetRoadmap;
-window.toggleHabit = toggleHabit;
+window.toggleHabitDay = toggleHabitDay;
 window.addHabit = addHabit;
 window.openAddHabitModal = openAddHabitModal;
-window.addNote = addNote;
+window.openAddNoteModal = openAddNoteModal;
 window.deleteNote = deleteNote;
-window.saveJournal = saveJournal;
-window.selectMood = selectMood;
 window.setTimer = setTimer;
 window.toggleTimer = toggleTimer;
 window.resetTimer = resetTimer;
 window.nextTwister = nextTwister;
 window.markTwisterComplete = markTwisterComplete;
+window.speakTwister = speakTwister;
 window.newReadingPassage = newReadingPassage;
 window.speakText = speakText;
 window.recordReadingSpeed = recordReadingSpeed;
 window.toggleChat = toggleChat;
 window.sendChatMessage = sendChatMessage;
-window.sendFeedback = sendFeedback;
-window.initiateRazorpayPayment = initiateRazorpayPayment;
-window.isPremiumUser = isPremiumUser;
+window.submitFeedback = submitFeedback;
+window.initiatePremiumPayment = initiatePremiumPayment;
 window.toggleDarkMode = toggleDarkMode;
