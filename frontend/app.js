@@ -476,85 +476,103 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// ============ REAL GOOGLE LOGIN ============
-function handleGoogleLogin() {
-    if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
-        showToast('Please add your Google Client ID in app.js', 'error');
-        return;
+// ============ GOOGLE SIGN-IN INITIALIZATION ============
+function initializeGoogleSignIn() {
+    if (typeof google !== 'undefined' && google.accounts) {
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleCredential,
+            auto_select: false
+        });
+        
+        const loginBtn = document.getElementById('googleLoginBtn');
+        const signupBtn = document.getElementById('googleSignupBtn');
+        
+        if (loginBtn) {
+            google.accounts.id.renderButton(loginBtn, { 
+                theme: 'outline', 
+                size: 'large', 
+                width: '100%',
+                text: 'continue_with'
+            });
+        }
+        
+        if (signupBtn) {
+            google.accounts.id.renderButton(signupBtn, { 
+                theme: 'outline', 
+                size: 'large', 
+                width: '100%',
+                text: 'signup_with'
+            });
+        }
     }
-    
-    const redirectUri = window.location.origin;
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=token&scope=email profile&prompt=select_account`;
-    
-    const width = 500;
-    const height = 600;
-    const left = (screen.width - width) / 2;
-    const top = (screen.height - height) / 2;
-    
-    const popup = window.open(authUrl, 'Google Login', `width=${width},height=${height},left=${left},top=${top}`);
-    
-    const interval = setInterval(() => {
-        try {
-            if (popup.closed) {
-                clearInterval(interval);
-                return;
-            }
-            
-            const popupUrl = popup.location.href;
-            if (popupUrl.includes('access_token=')) {
-                const hashParams = new URLSearchParams(popupUrl.split('#')[1]);
-                const accessToken = hashParams.get('access_token');
-                
-                if (accessToken) {
-                    clearInterval(interval);
-                    popup.close();
-                    
-                    fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-                        headers: { 'Authorization': `Bearer ${accessToken}` }
-                    })
-                    .then(response => response.json())
-                    .then(userInfo => {
-                        const email = userInfo.email;
-                        const name = userInfo.name;
-                        
-                        let users = JSON.parse(localStorage.getItem('growthpilot_users') || '{}');
-                        if (!users[email]) {
-                            users[email] = { name, email, password: 'google_' + userInfo.id };
-                            localStorage.setItem('growthpilot_users', JSON.stringify(users));
-                        }
-                        
-                        currentUser = { email, name };
-                        localStorage.setItem('growthpilot_current_user', JSON.stringify(currentUser));
-                        
-                        showToast(`Welcome ${name}! 🎉`);
-                        document.getElementById('authPage').style.display = 'none';
-                        document.getElementById('dashboardPage').style.display = 'block';
-                        document.getElementById('mainFooter').style.display = 'block';
-                        
-                        appData = getDefaultData();
-                        saveDataImmediately();
-                        updateUserUI();
-                        updateDashboard();
-                        renderRoadmap();
-                        renderHabits();
-                        renderScheduleUI();
-                        renderNotes();
-                        renderJournals();
-                        newReadingPassage();
-                        renderCurrentTwister();
-                        updateTwisterStats();
-                        renderTwisterList();
-                        initAnalytics();
-                        renderFeedbackList();
-                    })
-                    .catch(error => {
-                        showToast('Failed to get user info', 'error');
-                        console.error(error);
-                    });
-                }
-            }
-        } catch(e) {}
-    }, 500);
+}
+
+// Handle Google Credential Response
+function handleGoogleCredential(response) {
+    try {
+        const credential = response.credential;
+        const decoded = parseJwt(credential);
+        
+        const userInfo = {
+            name: decoded.name,
+            email: decoded.email,
+            picture: decoded.picture,
+            googleId: decoded.sub
+        };
+        
+        let users = JSON.parse(localStorage.getItem('growthpilot_users') || '{}');
+        
+        if (!users[userInfo.email]) {
+            users[userInfo.email] = {
+                name: userInfo.name,
+                email: userInfo.email,
+                picture: userInfo.picture,
+                googleId: userInfo.googleId
+            };
+            localStorage.setItem('growthpilot_users', JSON.stringify(users));
+            showToast(`Welcome ${userInfo.name}! 🎉`);
+        } else {
+            showToast(`Welcome back, ${userInfo.name}! 🎉`);
+        }
+        
+        currentUser = { email: userInfo.email, name: userInfo.name, picture: userInfo.picture };
+        localStorage.setItem('growthpilot_current_user', JSON.stringify(currentUser));
+        
+        document.getElementById('authPage').style.display = 'none';
+        document.getElementById('dashboardPage').style.display = 'block';
+        document.getElementById('mainFooter').style.display = 'block';
+        
+        appData = getDefaultData();
+        saveDataImmediately();
+        updateUserUI();
+        updateDashboard();
+        renderRoadmap();
+        renderHabits();
+        renderScheduleUI();
+        renderNotes();
+        renderJournals();
+        newReadingPassage();
+        renderCurrentTwister();
+        updateTwisterStats();
+        renderTwisterList();
+        initAnalytics();
+        renderFeedbackList();
+        
+    } catch (error) {
+        console.error('Google login error:', error);
+        showToast('Google login failed. Please try again.', 'error');
+    }
+}
+
+// Parse JWT token
+function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
 }
 
 // ============ AUTHENTICATION ============
@@ -1348,6 +1366,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    // Initialize Google Sign-In
+    initializeGoogleSignIn();
+    
     if (savedUser) {
         try {
             currentUser = JSON.parse(savedUser);
@@ -1380,7 +1401,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') sendChatMessage();
         });
     }
+    
+    // Dark Mode initialization
+    const darkMode = localStorage.getItem('darkMode');
+    if (darkMode === 'enabled') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('darkModeToggle').innerHTML = '☀️';
+    }
 });
+
+// ============ DARK MODE TOGGLE ============
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkModeToggle');
+    if (document.body.classList.contains('dark-mode')) {
+        localStorage.setItem('darkMode', 'enabled');
+        btn.innerHTML = '☀️';
+        btn.style.background = '#8b5cf6';
+    } else {
+        localStorage.setItem('darkMode', 'disabled');
+        btn.innerHTML = '🌙';
+        btn.style.background = '#4f46e5';
+    }
+}
 
 // ============ EXPOSE FUNCTIONS ============
 window.toggleSidebar = toggleSidebar;
@@ -1389,7 +1432,6 @@ window.showLoginForm = showLoginForm;
 window.showSignupForm = showSignupForm;
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
-window.handleGoogleLogin = handleGoogleLogin;
 window.logout = logout;
 window.openModal = openModal;
 window.closeModal = closeModal;
@@ -1419,3 +1461,4 @@ window.sendChatMessage = sendChatMessage;
 window.sendFeedback = sendFeedback;
 window.initiateRazorpayPayment = initiateRazorpayPayment;
 window.isPremiumUser = isPremiumUser;
+window.toggleDarkMode = toggleDarkMode;

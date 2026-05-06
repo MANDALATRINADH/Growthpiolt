@@ -18,9 +18,7 @@
         .page.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
         .toast-slide { animation: slideIn 0.3s ease; }
-        .chat-bubble { animation: bounce 0.5s ease infinite; }
         .sidebar-scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9; }
         .sidebar-scroll::-webkit-scrollbar { width: 4px; }
         .sidebar-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
@@ -176,7 +174,10 @@
                         <button onclick="handleLogin()" class="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition shadow-md">Login</button>
                     </div>
                     <div class="relative my-6"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div><div class="relative flex justify-center text-sm"><span class="px-2 bg-white text-gray-400">Or continue with</span></div></div>
-                    <button onclick="handleGoogleLogin()" class="w-full py-3 bg-white border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2">G Continue with Google</button>
+                    
+                    <!-- GOOGLE LOGIN BUTTON - ADDED HERE -->
+                    <div id="googleLoginBtn"></div>
+                    
                     <div class="mt-6 text-center"><p class="text-gray-500">Don't have an account? <button onclick="showSignupForm()" class="text-indigo-600 hover:text-indigo-700 font-semibold">Sign Up</button></p></div>
                 </div>
                 
@@ -190,7 +191,10 @@
                         <button onclick="handleSignup()" class="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition shadow-md">Create Account</button>
                     </div>
                     <div class="relative my-6"><div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div><div class="relative flex justify-center text-sm"><span class="px-2 bg-white text-gray-400">Or sign up with</span></div></div>
-                    <button onclick="handleGoogleLogin()" class="w-full py-3 bg-white border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 transition flex items-center justify-center gap-2">G Sign up with Google</button>
+                    
+                    <!-- GOOGLE SIGNUP BUTTON - ADDED HERE -->
+                    <div id="googleSignupBtn"></div>
+                    
                     <div class="mt-6 text-center"><p class="text-gray-500">Already have an account? <button onclick="showLoginForm()" class="text-indigo-600 hover:text-indigo-700 font-semibold">Login</button></p></div>
                 </div>
             </div>
@@ -258,7 +262,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h3 class="font-semibold text-gray-800 mb-4">📅 Today's Schedule</h3><div id="todaySchedule" class="space-y-2"><p class="text-gray-500 text-center py-8">No blocks scheduled</p></div></div>
-                <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h3 class="font-semibold text-gray-800 mb-4">⏱️ Quick Timer</h3><div class="text-6xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 py-4" id="timerDisplay">25:00</div><div class="flex justify-center gap-2 flex-wrap"><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200 transition" onclick="setTimer(5)">5m</button><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200 transition" onclick="setTimer(25)">25m</button><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200 transition" onclick="setTimer(50)">50m</button><button class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition shadow-md" id="timerStartBtn" onclick="toggleTimer()">▶ Start</button><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200 transition" onclick="resetTimer()">↺</button></div></div>
+                <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"><h3 class="font-semibold text-gray-800 mb-4">⏱️ Quick Timer</h3><div class="text-6xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 py-4" id="timerDisplay">25:00</div><div class="flex justify-center gap-2 flex-wrap"><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 transition" onclick="setTimer(5)">5m</button><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 transition" onclick="setTimer(25)">25m</button><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 transition" onclick="setTimer(50)">50m</button><button class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition shadow-md" id="timerStartBtn" onclick="toggleTimer()">▶ Start</button><button class="px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-200 transition" onclick="resetTimer()">↺</button></div></div>
             </div>
         </div>
 
@@ -380,40 +384,136 @@
 
 <div id="toastContainer" class="fixed bottom-5 right-5 z-[1000] space-y-2"></div>
 
-<script src="frontend/app.js"></script>
+<script src="app.js"></script>
 
+<!-- Google Login Initialization Script -->
 <script>
-// Dark Mode Toggle Function
-function toggleDarkMode() {
-    const body = document.body;
-    const toggleBtn = document.getElementById('darkModeToggle');
-    body.classList.toggle('dark-mode');
-    
-    if (body.classList.contains('dark-mode')) {
-        localStorage.setItem('darkMode', 'enabled');
-        toggleBtn.innerHTML = '☀️';
-        toggleBtn.style.background = '#8b5cf6';
-    } else {
-        localStorage.setItem('darkMode', 'disabled');
-        toggleBtn.innerHTML = '🌙';
-        toggleBtn.style.background = '#4f46e5';
+// Google Sign-In Initialization
+function initializeGoogleSignIn() {
+    if (typeof google !== 'undefined' && google.accounts) {
+        google.accounts.id.initialize({
+            client_id: '956139573371-kk1o33j2kcfrri7mgmh4p64ojh3jkfjd.apps.googleusercontent.com',
+            callback: handleGoogleCredential,
+            auto_select: false
+        });
+        
+        const loginBtn = document.getElementById('googleLoginBtn');
+        const signupBtn = document.getElementById('googleSignupBtn');
+        
+        if (loginBtn) {
+            google.accounts.id.renderButton(loginBtn, { 
+                theme: 'outline', 
+                size: 'large', 
+                width: '100%',
+                text: 'continue_with'
+            });
+        }
+        
+        if (signupBtn) {
+            google.accounts.id.renderButton(signupBtn, { 
+                theme: 'outline', 
+                size: 'large', 
+                width: '100%',
+                text: 'signup_with'
+            });
+        }
     }
 }
 
-// Load Dark Mode preference on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const darkMode = localStorage.getItem('darkMode');
+// Handle Google Credential Response
+function handleGoogleCredential(response) {
+    try {
+        const credential = response.credential;
+        const decoded = parseJwt(credential);
+        
+        const userInfo = {
+            name: decoded.name,
+            email: decoded.email,
+            picture: decoded.picture,
+            googleId: decoded.sub
+        };
+        
+        let users = JSON.parse(localStorage.getItem('growthpilot_users') || '{}');
+        
+        if (!users[userInfo.email]) {
+            users[userInfo.email] = {
+                name: userInfo.name,
+                email: userInfo.email,
+                picture: userInfo.picture,
+                googleId: userInfo.googleId
+            };
+            localStorage.setItem('growthpilot_users', JSON.stringify(users));
+            if (typeof showToast === 'function') showToast(`Welcome ${userInfo.name}! 🎉`);
+        } else {
+            if (typeof showToast === 'function') showToast(`Welcome back, ${userInfo.name}! 🎉`);
+        }
+        
+        // Set current user
+        if (typeof window !== 'undefined') {
+            window.currentUser = { email: userInfo.email, name: userInfo.name, picture: userInfo.picture };
+            localStorage.setItem('growthpilot_current_user', JSON.stringify(window.currentUser));
+        }
+        
+        // Hide login, show dashboard
+        const authPage = document.getElementById('authPage');
+        const dashboardPage = document.getElementById('dashboardPage');
+        const mainFooter = document.getElementById('mainFooter');
+        
+        if (authPage) authPage.style.display = 'none';
+        if (dashboardPage) dashboardPage.style.display = 'block';
+        if (mainFooter) mainFooter.style.display = 'block';
+        
+        // Load user data if function exists
+        if (typeof loadUserData === 'function') {
+            loadUserData();
+        } else if (typeof initializeAppData === 'function') {
+            initializeAppData();
+        }
+        
+    } catch (error) {
+        console.error('Google login error:', error);
+        if (typeof showToast === 'function') showToast('Google login failed. Please try again.', 'error');
+    }
+}
+
+// Parse JWT token
+function parseJwt(token) {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+}
+
+// Dark Mode Toggle Function
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const btn = document.getElementById('darkModeToggle');
+    if (document.body.classList.contains('dark-mode')) {
+        localStorage.setItem('darkMode', 'enabled');
+        btn.innerHTML = '☀️';
+        btn.style.background = '#8b5cf6';
+    } else {
+        localStorage.setItem('darkMode', 'disabled');
+        btn.innerHTML = '🌙';
+        btn.style.background = '#4f46e5';
+    }
+}
+
+// Load Dark Mode preference
+if (localStorage.getItem('darkMode') === 'enabled') {
+    document.body.classList.add('dark-mode');
     const toggleBtn = document.getElementById('darkModeToggle');
-    
-    if (darkMode === 'enabled') {
-        document.body.classList.add('dark-mode');
+    if (toggleBtn) {
         toggleBtn.innerHTML = '☀️';
         toggleBtn.style.background = '#8b5cf6';
-    } else {
-        toggleBtn.innerHTML = '🌙';
-        toggleBtn.style.background = '#4f46e5';
     }
-});
+}
+
+// Initialize Google Sign-In when page loads
+initializeGoogleSignIn();
 </script>
+
 </body>
 </html>
