@@ -1,0 +1,284 @@
+/* ========== GROWTH PILOT STYLES ========== */
+* {
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    overflow-x: hidden;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.sidebar-scroll {
+    scrollbar-width: thin;
+    overflow-y: auto;
+    max-height: 100vh;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    margin: 2px 6px;
+    border-radius: 12px;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.nav-item:hover {
+    background: #eef2ff;
+    color: #4f46e5;
+    transform: translateX(3px);
+}
+
+.nav-item.active {
+    background: #e0e7ff;
+    color: #4f46e5;
+    box-shadow: 0 1px 3px rgba(79, 70, 229, 0.1);
+}
+
+.page {
+    display: none;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.page.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tool-card,
+.resource-card {
+    transition: all 0.25s ease;
+    border-radius: 1rem;
+}
+
+.tool-card:hover,
+.resource-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px -12px rgba(0, 0, 0, 0.2);
+}
+
+.premium-badge {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+.toast-slide {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+/* ============================================ */
+/* MOBILE RESPONSIVE IMPROVEMENTS */
+/* ============================================ */
+
+/* Better touch targets for mobile */
+@media (max-width: 768px) {
+    /* Legal pages - better padding on small screens */
+    #page-privacy,
+    #page-terms,
+    #page-refund,
+    #page-contact {
+        padding: 0 !important;
+    }
+
+    #page-privacy > div,
+    #page-terms > div,
+    #page-refund > div,
+    #page-contact > div {
+        border-radius: 0 !important;
+        padding: 1rem !important;
+    }
+
+    /* Larger text for readability */
+    #page-privacy h3,
+    #page-terms h3,
+    #page-refund h3,
+    #page-contact h3 {
+        font-size: 1rem !important;
+    }
+
+    #page-privacy p,
+    #page-terms p,
+    #page-refund p,
+    #page-contact p,
+    #page-privacy li,
+    #page-terms li,
+    #page-refund li,
+    #page-contact li {
+        font-size: 0.875rem !important;
+        line-height: 1.6 !important;
+    }
+
+    /* Full-width buttons on mobile */
+    #page-contact button {
+        width: 100% !important;
+        padding: 0.875rem !important;
+        font-size: 1rem !important;
+    }
+
+    /* Better form inputs on mobile */
+    #page-contact input,
+    #page-contact textarea {
+        font-size: 16px !important; /* Prevents iOS zoom on focus */
+        padding: 0.75rem !important;
+    }
+
+    /* Stack grid items vertically */
+    #page-contact .grid,
+    #page-terms .grid,
+    #page-refund .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Tables scroll horizontally on mobile */
+    #page-refund table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Footer links stack on mobile */
+    #mainFooter .flex-wrap {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    #mainFooter .hidden.sm\\:inline {
+        display: none !important;
+    }
+
+    /* Sidebar adjustments */
+    .sidebar-scroll {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Card hover effects - disable on mobile */
+    .hover\\:shadow:hover {
+        box-shadow: none !important;
+    }
+
+    /* Touch-friendly spacing */
+    .nav-item {
+        padding: 0.75rem 1rem !important;
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* Small phones (under 375px) */
+@media (max-width: 375px) {
+    h1 {
+        font-size: 1.5rem !important;
+    }
+
+    h2 {
+        font-size: 1.25rem !important;
+    }
+
+    .text-2xl {
+        font-size: 1.25rem !important;
+    }
+
+    .text-4xl {
+        font-size: 1.75rem !important;
+    }
+
+    /* Reduce padding */
+    #page-privacy > div,
+    #page-terms > div,
+    #page-refund > div,
+    #page-contact > div {
+        padding: 0.75rem !important;
+    }
+}
+
+/* Fix iOS safe areas */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    #mainFooter {
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+
+    #chatbot {
+        bottom: calc(1.5rem + env(safe-area-inset-bottom));
+    }
+
+    #toastContainer {
+        bottom: calc(1.25rem + env(safe-area-inset-bottom));
+    }
+}
+
+/* Improve scrolling on mobile */
+.page {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    max-height: calc(100vh - 60px);
+}
+
+/* Active state for touch devices */
+@media (hover: none) {
+    .nav-item:active {
+        background-color: #EEF2FF !important;
+        transform: scale(0.98);
+    }
+
+    button:active {
+        transform: scale(0.97);
+        transition: transform 0.1s;
+    }
+
+    .cursor-pointer:active {
+        opacity: 0.8;
+    }
+}
+
+/* Mobile table improvements */
+@media (max-width: 640px) {
+    table {
+        font-size: 0.75rem;
+    }
+
+    table th,
+    table td {
+        padding: 0.5rem 0.25rem;
+    }
+}
