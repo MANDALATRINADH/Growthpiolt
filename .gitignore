@@ -1,8 +1,12 @@
-﻿node_modules/
+﻿@"
+node_modules/
 .env
 .env.local
+.env.*.local
 config.js
-.DS_Store
-.vscode/
 .vercel/
 *.log
+.DS_Store
+.vscode/
+test-api.*
+"@ | Out-File -FilePath .gitignore -Encoding UTF8
