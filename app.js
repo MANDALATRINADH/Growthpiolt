@@ -21,6 +21,10 @@
 // - All user inputs are HTML-escaped (XSS protection)
 // - Form validation on all inputs
 // ============================================================
+// ============================================================
+// BACKEND API URL
+// ============================================================
+const API_URL = 'http://localhost:5003';
 
 // --- GOOGLE SIGN-IN CONFIGURATION ---
 const GOOGLE_CLIENT_ID = '956139573371-kk1o33j2kcfrri7mgmh4p64ojh3jkfjd.apps.googleusercontent.com';
@@ -307,8 +311,27 @@ function escapeHtml(str) {
 }
 
 /** NOW USES encodeData() for security */
-function saveDataImmediately() {
-    if (currentUser && appData) {
+async function saveDataImmediately() {
+    if (!currentUser || !appData) return;
+    
+    try {
+        const response = await fetch('http://localhost:5003/api/user/data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('gp_token')
+            },
+            body: JSON.stringify(appData)
+        });
+        
+        if (!response.ok) throw new Error('Save failed');
+        
+        // Also save locally as backup
+        const encoded = encodeData(appData);
+        localStorage.setItem(`gp_data_${currentUser.email}`, encoded);
+    } catch (error) {
+        console.error('Backend save failed, using local backup:', error);
+        // Fallback: save locally
         const encoded = encodeData(appData);
         localStorage.setItem(`gp_data_${currentUser.email}`, encoded);
     }
@@ -325,18 +348,33 @@ function loadUserData() {
     document.getElementById('userAvatar').innerText = currentUser.name[0].toUpperCase();
     document.getElementById('welcomeName').innerHTML = ` ${currentUser.name.split(' ')[0]}! 👋`;
 
+    // Try loading from backend first
+try {
+    const response = await fetch('http://localhost:5003/api/user/data', {
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('gp_token')
+        }
+    });
+    
+    if (response.ok) {
+        const serverData = await response.json();
+        appData = { ...getDefaultData(), ...serverData };
+    } else {
+        throw new Error('Failed to load from server');
+    }
+} catch (error) {
+    console.log('Loading from local backup...');
+    // Fallback: load from localStorage
     const savedEncoded = localStorage.getItem(`gp_data_${currentUser.email}`);
     let savedData = null;
-    
     if (savedEncoded) {
         savedData = decodeData(savedEncoded);
         if (!savedData) {
-            // Fallback: try old plain JSON format
             try { savedData = JSON.parse(savedEncoded); } catch(e) {}
         }
     }
-    
     appData = savedData ? { ...getDefaultData(), ...savedData } : getDefaultData();
+}
 
     if (appData.isPremium) {
         document.getElementById('userLevel').innerHTML = '⭐ Premium Member';
@@ -1099,44 +1137,108 @@ function sendContactMessage() {
 
 
 // ============================================================
-// AUTHENTICATION (WITH HASHED PASSWORDS)
+// AUTHENTICATION (WITH BACKEND + HASHED LOCAL FALLBACK)
 // ============================================================
 
-function handleLogin() {
+/** Common function to switch from auth page to dashboard */
+function finishLogin() {
+    document.getElementById('authPage').style.display = 'none';
+    document.getElementById('dashboardPage').style.display = 'block';
+    document.getElementById('mainFooter').style.display = 'block';
+    loadUserData();
+}
+
+/** Handles email/password login - tries backend first, falls back to local */
+async function handleLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     
-    if (!email || !password) { showToast('Please enter both email and password', 'error'); return; }
-    
+    if (!email || !password) { 
+        showToast('Please enter both email and password', 'error'); 
+        return; 
+    }
+
+    // Try backend login first
+    try {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('gp_token', data.token);
+            currentUser = { email, name: data.name || email.split('@')[0] };
+            localStorage.setItem('gp_current_user', JSON.stringify(currentUser));
+            showToast(`Welcome back, ${currentUser.name}! 👋`);
+            finishLogin();
+            return;
+        }
+    } catch (error) {
+        console.log('Backend unavailable, using local login...');
+    }
+
+    // Fallback: Local login with hashed password
     const users = JSON.parse(localStorage.getItem('gp_users') || '{}');
     const user = users[email];
-    
-    // Compare HASHED password (not plain text)
+
     if (user && user.password === hashPassword(password)) {
         currentUser = { email: email, name: user.name };
         localStorage.setItem('gp_current_user', JSON.stringify(currentUser));
         showToast(`Welcome back, ${user.name}! 👋`);
-        document.getElementById('authPage').style.display = 'none';
-        document.getElementById('dashboardPage').style.display = 'block';
-        document.getElementById('mainFooter').style.display = 'block';
-        loadUserData();
+        finishLogin();
     } else {
         showToast('Invalid email or password', 'error');
     }
 }
 
-function handleSignup() {
+/** Handles new user signup - tries backend first, falls back to local */
+async function handleSignup() {
     const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value;
     
-    if (!name || !email || !password) { showToast('Please fill in all fields', 'error'); return; }
-    if (password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
+    if (!name || !email || !password) { 
+        showToast('Please fill in all fields', 'error'); 
+        return; 
+    }
     
+    if (password.length < 6) { 
+        showToast('Password must be at least 6 characters', 'error'); 
+        return; 
+    }
+
+    // Try backend registration first
+    try {
+        const response = await fetch(`${API_URL}/api/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem('gp_token', data.token);
+            currentUser = { email, name };
+            localStorage.setItem('gp_current_user', JSON.stringify(currentUser));
+            showToast(`Account created! Welcome, ${name}! 🚀`);
+            appData = getDefaultData();
+            await saveDataImmediately();
+            finishLogin();
+            return;
+        }
+    } catch (error) {
+        console.log('Backend unavailable, using local registration...');
+    }
+
+    // Fallback: Local registration with hashed password
     let users = JSON.parse(localStorage.getItem('gp_users') || '{}');
-    if (users[email]) { showToast('Account already exists. Please log in.', 'error'); return; }
+    if (users[email]) { 
+        showToast('Account already exists. Please log in.', 'error'); 
+        return; 
+    }
     
-    // Store HASHED password (not plain text)
     users[email] = { name: name, email: email, password: hashPassword(password) };
     localStorage.setItem('gp_users', JSON.stringify(users));
     
@@ -1144,18 +1246,16 @@ function handleSignup() {
     localStorage.setItem('gp_current_user', JSON.stringify(currentUser));
     showToast(`Account created! Welcome, ${name}! 🚀`);
     
-    document.getElementById('authPage').style.display = 'none';
-    document.getElementById('dashboardPage').style.display = 'block';
-    document.getElementById('mainFooter').style.display = 'block';
-    
     appData = getDefaultData();
     saveDataImmediately();
-    loadUserData();
+    finishLogin();
 }
 
+/** Logs out the current user and clears session */
 function logout() {
     if (confirm('Log out? Your data is saved.')) {
         localStorage.removeItem('gp_current_user');
+        localStorage.removeItem('gp_token');
         currentUser = null;
         appData = null;
         document.getElementById('authPage').style.display = 'flex';
@@ -1165,50 +1265,94 @@ function logout() {
     }
 }
 
+/** Shows login form, hides signup form */
 function showLoginForm() {
     document.getElementById('loginFormContainer').style.display = 'block';
     document.getElementById('signupFormContainer').style.display = 'none';
 }
 
+/** Shows signup form, hides login form */
 function showSignupForm() {
     document.getElementById('loginFormContainer').style.display = 'none';
     document.getElementById('signupFormContainer').style.display = 'block';
 }
 
+/** Initializes Google Sign-In buttons */
 function initializeGoogleSignIn() {
     if (typeof google !== 'undefined' && google.accounts) {
-        google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredential });
-        google.accounts.id.renderButton(document.getElementById('googleLoginBtn'), { theme: 'outline', size: 'large' });
-        google.accounts.id.renderButton(document.getElementById('googleSignupBtn'), { theme: 'outline', size: 'large' });
+        google.accounts.id.initialize({ 
+            client_id: GOOGLE_CLIENT_ID, 
+            callback: handleGoogleCredential 
+        });
+        google.accounts.id.renderButton(
+            document.getElementById('googleLoginBtn'), 
+            { theme: 'outline', size: 'large' }
+        );
+        google.accounts.id.renderButton(
+            document.getElementById('googleSignupBtn'), 
+            { theme: 'outline', size: 'large' }
+        );
     } else {
         setTimeout(initializeGoogleSignIn, 500);
     }
 }
 
-function handleGoogleCredential(response) {
+/** Handles Google OAuth credential response */
+async function handleGoogleCredential(response) {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    
+    // Try backend Google login
+    try {
+        const res = await fetch(`${API_URL}/api/auth/google`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                email: payload.email, 
+                name: payload.name,
+                googleId: payload.sub 
+            })
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('gp_token', data.token);
+        }
+    } catch (error) {
+        console.log('Backend unavailable for Google login');
+    }
+
+    // Local fallback
     let users = JSON.parse(localStorage.getItem('gp_users') || '{}');
-    if (!users[payload.email]) users[payload.email] = { name: payload.name, email: payload.email };
-    localStorage.setItem('gp_users', JSON.stringify(users));
+    if (!users[payload.email]) {
+        users[payload.email] = { name: payload.name, email: payload.email };
+        localStorage.setItem('gp_users', JSON.stringify(users));
+    }
+    
     currentUser = { email: payload.email, name: payload.name };
     localStorage.setItem('gp_current_user', JSON.stringify(currentUser));
     showToast(`Welcome, ${payload.name}! 🎉`);
-    document.getElementById('authPage').style.display = 'none';
-    document.getElementById('dashboardPage').style.display = 'block';
-    document.getElementById('mainFooter').style.display = 'block';
-    loadUserData();
+    finishLogin();
 }
 
-
 // ============================================================
-// RAZORPAY PAYMENT INTEGRATION
+// RAZORPAY PAYMENT INTEGRATION (WITH BACKEND SYNC)
 // ============================================================
 
 function openPaymentModal(planType) {
-    if (paymentInProgress) { showToast('Payment already in progress', 'error'); return; }
-    if (!currentUser) { showToast('Please login first', 'error'); return; }
+    if (paymentInProgress) { 
+        showToast('Payment already in progress', 'error'); 
+        return; 
+    }
+    if (!currentUser) { 
+        showToast('Please login first', 'error'); 
+        return; 
+    }
+    
     const plan = PAYMENT_CONFIG.plans[planType];
-    if (!plan) { showToast('Invalid plan', 'error'); return; }
+    if (!plan) { 
+        showToast('Invalid plan selected', 'error'); 
+        return; 
+    }
     
     paymentInProgress = true;
     
@@ -1218,87 +1362,186 @@ function openPaymentModal(planType) {
         currency: 'INR',
         name: 'GrowthPilot',
         description: plan.description,
-        prefill: { name: currentUser.name || '', email: currentUser.email || '' },
-        notes: { plan_type: planType },
-        theme: { color: '#4F46E5' },
-        handler: function(response) {
+        prefill: { 
+            name: currentUser.name || '', 
+            email: currentUser.email || '' 
+        },
+        notes: { 
+            plan_type: planType,
+            user_email: currentUser.email 
+        },
+        theme: { 
+            color: '#4F46E5' 
+        },
+        handler: async function(response) {
             paymentInProgress = false;
+            
+            // Calculate expiry
             const now = new Date();
             const expiryDate = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
+            
+            // Update premium status
             appData.isPremium = true;
             appData.premiumPlan = planType;
+            appData.premiumActivatedAt = now.toISOString();
             appData.premiumExpiry = expiryDate.toISOString();
             appData.lastPaymentId = response.razorpay_payment_id;
+            
+            // Add to payment history
             if (!appData.paymentHistory) appData.paymentHistory = [];
             appData.paymentHistory.unshift({
                 paymentId: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id || '',
                 planType: planType,
                 planName: plan.name,
                 amount: plan.amountInRupees,
+                currency: 'INR',
                 status: 'completed',
                 paymentDate: now.toISOString(),
                 expiryDate: expiryDate.toISOString()
             });
-            saveDataImmediately();
+            
+            // Save to backend/local
+            await saveDataImmediately();
+            
+            // Update UI to show premium status
             document.getElementById('userLevel').innerHTML = '⭐ Premium Member';
             document.getElementById('userLevel').style.color = '#D97706';
+            
             const avatar = document.getElementById('userAvatar');
-            if (avatar) avatar.style.background = 'linear-gradient(135deg, #F59E0B, #D97706)';
-            alert(`🎉 Payment Successful!\n\nPlan: ${plan.name}\nAmount: ₹${plan.amountInRupees}\nPayment ID: ${response.razorpay_payment_id}\nExpires: ${expiryDate.toLocaleDateString()}`);
+            if (avatar) {
+                avatar.style.background = 'linear-gradient(135deg, #F59E0B, #D97706)';
+            }
+            
+            // Show success message
+            alert(
+                '🎉 Payment Successful!\n\n' +
+                'Plan: ' + plan.name + '\n' +
+                'Amount: ₹' + plan.amountInRupees + '\n' +
+                'Payment ID: ' + response.razorpay_payment_id + '\n' +
+                'Expires: ' + expiryDate.toLocaleDateString() + '\n\n' +
+                'All premium features are now unlocked!'
+            );
+            
             showToast('Premium activated! 🚀', 'success');
+            
+            // Update premium page if visible
+            updatePremiumPageDisplay();
         },
         modal: {
             ondismiss: function() {
                 paymentInProgress = false;
-                showToast('Payment cancelled', 'error');
+                showToast('Payment cancelled. No charges were made.', 'error');
             }
         }
     };
     
     const razorpay = new Razorpay(options);
+    
     razorpay.on('payment.failed', function(response) {
         paymentInProgress = false;
-        showToast('Payment failed: ' + (response.error.description || 'Try again'), 'error');
+        const errorMsg = response.error.description || 'Payment failed. Please try again.';
+        showToast('Payment failed: ' + errorMsg, 'error');
+        console.error('Payment failed:', response.error);
     });
+    
     razorpay.open();
 }
 
+/** Monthly subscription handler */
 function initiateMonthlyPayment() {
-    if (!currentUser) { showToast('Login first', 'error'); return; }
-    if (appData.isPremium && appData.premiumExpiry && new Date(appData.premiumExpiry) > new Date()) { showToast('Already premium', 'error'); return; }
-    if (confirm('Subscribe to Pro Monthly at ₹99/month?')) openPaymentModal('monthly');
+    if (!currentUser) { 
+        showToast('Please login first to subscribe', 'error'); 
+        return; 
+    }
+    
+    if (appData.isPremium && appData.premiumExpiry && new Date(appData.premiumExpiry) > new Date()) { 
+        showToast('You already have an active premium subscription!', 'error'); 
+        return; 
+    }
+    
+    if (confirm('Subscribe to Pro Monthly at ₹99/month?\n\nCancel anytime. Payment secured by Razorpay.')) {
+        openPaymentModal('monthly');
+    }
 }
 
+/** Yearly subscription handler */
 function initiateYearlyPayment() {
-    if (!currentUser) { showToast('Login first', 'error'); return; }
-    if (appData.isPremium && appData.premiumExpiry && new Date(appData.premiumExpiry) > new Date()) { showToast('Already premium', 'error'); return; }
-    if (confirm('Subscribe to Pro Yearly at ₹999/year?\n\nSave 16%!')) openPaymentModal('yearly');
+    if (!currentUser) { 
+        showToast('Please login first to subscribe', 'error'); 
+        return; 
+    }
+    
+    if (appData.isPremium && appData.premiumExpiry && new Date(appData.premiumExpiry) > new Date()) { 
+        showToast('You already have an active premium subscription!', 'error'); 
+        return; 
+    }
+    
+    if (confirm('Subscribe to Pro Yearly at ₹999/year?\n\nSave 16% (2 months free)! Payment secured by Razorpay.')) {
+        openPaymentModal('yearly');
+    }
 }
 
+/** Checks if premium has expired and updates UI */
 function checkAndUpdatePremiumStatus() {
     if (!appData?.isPremium || !appData.premiumExpiry) return;
+    
     if (new Date() >= new Date(appData.premiumExpiry)) {
+        // Premium expired
         appData.isPremium = false;
         appData.premiumPlan = null;
         appData.premiumExpiry = null;
         saveDataImmediately();
+        
+        // Reset UI
         document.getElementById('userLevel').innerHTML = 'Explorer';
         const avatar = document.getElementById('userAvatar');
-        if (avatar) avatar.style.background = 'linear-gradient(to bottom right, #4F46E5, #7C3AED)';
-        showToast('Premium expired. Renew to continue!', 'error');
+        if (avatar) {
+            avatar.style.background = 'linear-gradient(to bottom right, #4F46E5, #7C3AED)';
+        }
+        
+        showToast('Your premium subscription has expired. Renew to continue!', 'error');
     }
 }
 
-function testRazorpayIntegration() {
-    console.log('=== Razorpay Test ===');
-    console.log('SDK:', typeof Razorpay !== 'undefined' ? '✅' : '❌');
-    console.log('Config:', typeof PAYMENT_CONFIG !== 'undefined' ? '✅' : '❌');
-    console.log('Key ID:', PAYMENT_CONFIG?.razorpayKeyId ? '✅' : '❌');
-    console.log('User:', currentUser ? '✅' : '❌');
-    console.log('Premium:', appData?.isPremium ? '✅' : '❌');
+/** Updates premium page display */
+function updatePremiumPageDisplay() {
+    const premiumPage = document.getElementById('page-products');
+    if (!premiumPage || !appData.isPremium) return;
+    
+    const expiryDate = new Date(appData.premiumExpiry);
+    const daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+    
+    // Remove existing status banner if any
+    const existingBanner = premiumPage.querySelector('.premium-status-banner');
+    if (existingBanner) existingBanner.remove();
+    
+    // Add status banner
+    const banner = document.createElement('div');
+    banner.className = 'premium-status-banner bg-green-50 border-2 border-green-500 rounded-2xl p-6 mb-6 text-center';
+    banner.innerHTML = `
+        <div class="text-4xl mb-2">⭐</div>
+        <h3 class="text-xl font-bold text-green-700">Premium Active</h3>
+        <p class="text-green-600 mt-1">You're on the ${appData.premiumPlan === 'monthly' ? 'Monthly (₹99)' : 'Yearly (₹999)'} plan</p>
+        <p class="text-sm text-green-500 mt-1">
+            Expires: ${expiryDate.toLocaleDateString()} (${daysLeft} days remaining)
+        </p>
+        ${daysLeft <= 7 ? '<p class="text-red-500 text-sm mt-2">⚠️ Renew soon to avoid interruption</p>' : ''}
+    `;
+    
+    premiumPage.insertBefore(banner, premiumPage.firstChild);
 }
 
-
+/** Test function for Razorpay integration */
+function testRazorpayIntegration() {
+    console.log('=== Razorpay Integration Test ===');
+    console.log('1. Razorpay SDK Loaded:', typeof Razorpay !== 'undefined' ? '✅' : '❌');
+    console.log('2. Config Loaded:', typeof PAYMENT_CONFIG !== 'undefined' ? '✅' : '❌');
+    console.log('3. Key ID:', PAYMENT_CONFIG?.razorpayKeyId ? '✅' : '❌');
+    console.log('4. Current User:', currentUser ? '✅ Logged in' : '❌ Not logged in');
+    console.log('5. Premium Status:', appData?.isPremium ? '✅ Active' : '❌ Inactive');
+    console.log('===============================');
+}
 // ============================================================
 // APP INITIALIZATION
 // ============================================================
