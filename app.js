@@ -338,7 +338,7 @@ async function saveDataImmediately() {
 }
 
 /** NOW USES decodeData() for security */
-function loadUserData() {
+async function loadUserData() {
     const saved = localStorage.getItem('gp_current_user');
     if (!saved) return;
 
@@ -349,32 +349,32 @@ function loadUserData() {
     document.getElementById('welcomeName').innerHTML = ` ${currentUser.name.split(' ')[0]}! 👋`;
 
     // Try loading from backend first
-try {
-    const response = await fetch('http://localhost:5003/api/user/data', {
-        headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('gp_token')
+    try {
+        const response = await fetch('http://localhost:5003/api/user/data', {
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('gp_token')
+            }
+        });
+        
+        if (response.ok) {
+            const serverData = await response.json();
+            appData = { ...getDefaultData(), ...serverData };
+        } else {
+            throw new Error('Failed to load from server');
         }
-    });
-    
-    if (response.ok) {
-        const serverData = await response.json();
-        appData = { ...getDefaultData(), ...serverData };
-    } else {
-        throw new Error('Failed to load from server');
-    }
-} catch (error) {
-    console.log('Loading from local backup...');
-    // Fallback: load from localStorage
-    const savedEncoded = localStorage.getItem(`gp_data_${currentUser.email}`);
-    let savedData = null;
-    if (savedEncoded) {
-        savedData = decodeData(savedEncoded);
-        if (!savedData) {
-            try { savedData = JSON.parse(savedEncoded); } catch(e) {}
+    } catch (error) {
+        console.log('Loading from local backup...');
+        // Fallback: load from localStorage
+        const savedEncoded = localStorage.getItem(`gp_data_${currentUser.email}`);
+        let savedData = null;
+        if (savedEncoded) {
+            savedData = decodeData(savedEncoded);
+            if (!savedData) {
+                try { savedData = JSON.parse(savedEncoded); } catch(e) {}
+            }
         }
+        appData = savedData ? { ...getDefaultData(), ...savedData } : getDefaultData();
     }
-    appData = savedData ? { ...getDefaultData(), ...savedData } : getDefaultData();
-}
 
     if (appData.isPremium) {
         document.getElementById('userLevel').innerHTML = '⭐ Premium Member';
