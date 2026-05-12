@@ -1598,29 +1598,39 @@ function openForgotPasswordModal() {
 }
 
 async function handleForgotPassword() {
-    const email = document.getElementById('forgotEmail').value.trim();
+    const emailInput = document.getElementById('forgotEmail');
+    const email = emailInput.value.trim();
     
     if (!email || !email.includes('@') || !email.includes('.')) {
         showToast('Please enter a valid email address', 'error');
         return;
     }
 
+    // Show loading state
+    const sendBtn = document.getElementById('forgotPasswordBtn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerText = 'Sending...';
+    }
+
     try {
         const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email: email })
         });
 
         const data = await response.json();
+        console.log('Forgot password response:', data);
 
         if (response.ok) {
             closeModal('forgotPasswordModal');
             
-            // If token is returned, open reset modal directly
             if (data.resetToken) {
                 resetToken = data.resetToken;
-                openModal('resetPasswordModal');
+                setTimeout(() => {
+                    openModal('resetPasswordModal');
+                }, 500);
                 showToast('✅ Enter your new password below', 'success');
             } else {
                 showToast('✅ Reset link sent! Check your email.', 'success');
@@ -1630,10 +1640,14 @@ async function handleForgotPassword() {
         }
     } catch (error) {
         console.error('Forgot password error:', error);
-        showToast('Service temporarily unavailable. Please try again later.', 'error');
+        showToast('Service unavailable. Please try again.', 'error');
+    } finally {
+        if (sendBtn) {
+            sendBtn.disabled = false;
+            sendBtn.innerText = 'Send Reset Link';
+        }
     }
 }
-
 async function handleResetPassword() {
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
