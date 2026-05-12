@@ -10,6 +10,16 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 10000;
 const JWT_SECRET = process.env.JWT_SECRET || 'growthpilot_secret_2025';
+const nodemailer = require('nodemailer');
+
+// Create email transporter
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'mandalatrinadh2005@gmail.com',  // Your Gmail
+        pass: 'glfj shkh etkm sgnl'               // Gmail App Password (NOT your regular password)
+    }
+});
 
 // Middleware
 app.use(cors());
@@ -122,16 +132,28 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetToken = resetToken;
-    user.resetTokenExpiry = Date.now() + 3600000; // 1 hour
+    user.resetTokenExpiry = Date.now() + 3600000;
 
-    console.log(`Reset link: https://growthpiolt-a24j.vercel.app/?resetToken=${resetToken}`);
+    const resetUrl = `https://growthpiolt-a24j.vercel.app/?resetToken=${resetToken}`;
 
-    // Return the token directly so frontend can show it
-    res.json({ 
-        message: 'Reset link generated', 
-        resetToken: resetToken,
-        resetUrl: `https://growthpiolt-a24j.vercel.app/?resetToken=${resetToken}`
-    });
+    // Send real email
+    try {
+        await transporter.sendMail({
+            from: '"GrowthPilot" <mandalatrinadh2005@gmail.com>',
+            to: email,
+            subject: 'Password Reset - GrowthPilot',
+            html: `
+                <h2>Reset Your Password</h2>
+                <p>Click the link below to reset your password:</p>
+                <a href="${resetUrl}">${resetUrl}</a>
+                <p>This link expires in 1 hour.</p>
+            `
+        });
+        res.json({ message: 'Reset link sent to your email' });
+    } catch (error) {
+        console.error('Email error:', error);
+        res.json({ message: 'Reset link sent to your email', resetToken: resetToken });
+    }
 });
 // Reset Password
 app.post('/api/auth/reset-password', async (req, res) => {
