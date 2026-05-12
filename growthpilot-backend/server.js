@@ -1,3 +1,4 @@
+// v2.1 - GrowthPilot Backend with Forgot Password
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
