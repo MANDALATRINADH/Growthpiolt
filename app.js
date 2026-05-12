@@ -1616,13 +1616,20 @@ async function handleForgotPassword() {
 
         if (response.ok) {
             closeModal('forgotPasswordModal');
-            showToast('✅ Reset link sent! Check your email.', 'success');
+            
+            // If token is returned, open reset modal directly
+            if (data.resetToken) {
+                resetToken = data.resetToken;
+                openModal('resetPasswordModal');
+                showToast('✅ Enter your new password below', 'success');
+            } else {
+                showToast('✅ Reset link sent! Check your email.', 'success');
+            }
         } else {
             showToast(data.message || 'Failed to send reset email', 'error');
         }
     } catch (error) {
         console.error('Forgot password error:', error);
-        // If backend is unavailable, show a friendly message
         showToast('Service temporarily unavailable. Please try again later.', 'error');
     }
 }

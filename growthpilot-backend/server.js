@@ -124,13 +124,15 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     user.resetToken = resetToken;
     user.resetTokenExpiry = Date.now() + 3600000; // 1 hour
 
-    console.log(`\n📧 PASSWORD RESET LINK:`);
-    console.log(`https://growthpiolt-a24j.vercel.app/?resetToken=${resetToken}`);
-    console.log(`Email: ${email}\n`);
+    console.log(`Reset link: https://growthpiolt-a24j.vercel.app/?resetToken=${resetToken}`);
 
-    res.json({ message: 'Reset link sent to your email' });
+    // Return the token directly so frontend can show it
+    res.json({ 
+        message: 'Reset link generated', 
+        resetToken: resetToken,
+        resetUrl: `https://growthpiolt-a24j.vercel.app/?resetToken=${resetToken}`
+    });
 });
-
 // Reset Password
 app.post('/api/auth/reset-password', async (req, res) => {
     try {
