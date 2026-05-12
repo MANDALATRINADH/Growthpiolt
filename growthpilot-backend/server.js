@@ -1,3 +1,4 @@
+// v3.0 - Email Fix - May 2026
 // GrowthPilot Backend Server
 require('dotenv').config();
 const express = require('express');
