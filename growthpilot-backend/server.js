@@ -1,25 +1,16 @@
-// v2.1 - GrowthPilot Backend with Forgot Password
+// GrowthPilot Backend Server
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-require('dotenv').config();
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 const JWT_SECRET = process.env.JWT_SECRET || 'growthpilot_secret_2025';
-const nodemailer = require('nodemailer');
-
-// Create email transporter
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'mandalatrinadh2005@gmail.com',  // Your Gmail
-        pass: 'glfj shkh etkm sgnl'               // Gmail App Password (NOT your regular password)
-    }
-});
 
 // Middleware
 app.use(cors());
@@ -27,6 +18,15 @@ app.use(express.json());
 
 // In-memory user storage
 let users = [];
+
+// Email transporter
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.GMAIL_USER || 'mandalatrinadh2005@gmail.com',
+        pass: process.env.GMAIL_APP_PASSWORD
+    }
+});
 
 // ============================================================
 // ROUTES
@@ -39,7 +39,11 @@ app.get('/', (req, res) => {
 
 // API Health
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', users: users.length });
+    res.json({ 
+        status: 'ok', 
+        users: users.length,
+        emailConfigured: !!process.env.GMAIL_APP_PASSWORD
+    });
 });
 
 // Register
@@ -121,7 +125,7 @@ app.post('/api/auth/google', async (req, res) => {
     }
 });
 
-// Forgot Password
+// Forgot Password - SENDS REAL EMAIL
 app.post('/api/auth/forgot-password', async (req, res) => {
     const { email } = req.body;
 
@@ -132,29 +136,56 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 
     const resetToken = crypto.randomBytes(32).toString('hex');
     user.resetToken = resetToken;
-    user.resetTokenExpiry = Date.now() + 3600000;
+    user.resetTokenExpiry = Date.now() + 3600000; // 1 hour
 
     const resetUrl = `https://growthpiolt-a24j.vercel.app/?resetToken=${resetToken}`;
 
-    // Send real email
+    // Send email
     try {
         await transporter.sendMail({
             from: '"GrowthPilot" <mandalatrinadh2005@gmail.com>',
             to: email,
-            subject: 'Password Reset - GrowthPilot',
+            subject: '🔑 Password Reset - GrowthPilot',
             html: `
-                <h2>Reset Your Password</h2>
-                <p>Click the link below to reset your password:</p>
-                <a href="${resetUrl}">${resetUrl}</a>
-                <p>This link expires in 1 hour.</p>
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <div style="background: linear-gradient(135deg, #4F46E5, #7C3AED); padding: 30px; border-radius: 10px 10px 0 0;">
+                        <h1 style="color: white; margin: 0; font-size: 24px;">🚀 GrowthPilot</h1>
+                    </div>
+                    <div style="background: white; padding: 30px; border: 1px solid #e5e7eb; border-radius: 0 0 10px 10px;">
+                        <h2 style="color: #1f2937;">Reset Your Password</h2>
+                        <p style="color: #6b7280;">You requested a password reset for your GrowthPilot account.</p>
+                        <p style="color: #6b7280;">Click the button below to reset your password:</p>
+                        <a href="${resetUrl}" 
+                           style="display: inline-block; background: #4F46E5; color: white; padding: 12px 24px; 
+                                  text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold;">
+                            Reset Password
+                        </a>
+                        <p style="color: #9ca3af; font-size: 12px;">
+                            This link expires in 1 hour.<br>
+                            If you didn't request this, you can safely ignore this email.
+                        </p>
+                        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+                        <p style="color: #9ca3af; font-size: 11px;">
+                            If the button doesn't work, copy and paste this link:<br>
+                            ${resetUrl}
+                        </p>
+                    </div>
+                </div>
             `
         });
+
+        console.log(`✅ Reset email sent to ${email}`);
         res.json({ message: 'Reset link sent to your email' });
-    } catch (error) {
-        console.error('Email error:', error);
-        res.json({ message: 'Reset link sent to your email', resetToken: resetToken });
+    } catch (emailError) {
+        console.error('❌ Email send failed:', emailError.message);
+        // Fallback: return the token so the user can still reset
+        res.json({ 
+            message: 'Reset link generated (email service unavailable)',
+            resetToken: resetToken 
+        });
     }
 });
+
 // Reset Password
 app.post('/api/auth/reset-password', async (req, res) => {
     try {
@@ -201,5 +232,6 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log('='.repeat(40));
     console.log(`📍 Port: ${PORT}`);
     console.log(`✅ Health: http://0.0.0.0:${PORT}/api/health`);
+    console.log(`📧 Email: ${process.env.GMAIL_APP_PASSWORD ? 'CONFIGURED ✅' : 'NOT CONFIGURED ❌'}`);
     console.log('='.repeat(40));
 });
