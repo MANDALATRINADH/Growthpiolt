@@ -24,7 +24,7 @@
 // ============================================================
 // BACKEND API URL
 // ============================================================
-const API_URL = 'http://localhost:5003';
+const API_URL = 'https://growthpiolt.onrender.com';
 
 // --- GOOGLE SIGN-IN CONFIGURATION ---
 const GOOGLE_CLIENT_ID = '956139573371-kk1o33j2kcfrri7mgmh4p64ojh3jkfjd.apps.googleusercontent.com';
@@ -1549,6 +1549,9 @@ function testRazorpayIntegration() {
 document.addEventListener('DOMContentLoaded', () => {
     initializeGoogleSignIn();
     
+    // Check for password reset token in URL
+    checkForResetToken();
+    
     const savedUser = localStorage.getItem('gp_current_user');
     if (savedUser) {
         currentUser = JSON.parse(savedUser);
@@ -1581,7 +1584,103 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.getElementById('chatToggle')?.addEventListener('click', toggleChat);
 });
+// ============================================================
+// FORGOT PASSWORD FUNCTIONS
+// ============================================================
 
+let resetToken = null;
+
+function openForgotPasswordModal() {
+    // Pre-fill email from login form
+    const loginEmail = document.getElementById('loginEmail').value;
+    document.getElementById('forgotEmail').value = loginEmail;
+    openModal('forgotPasswordModal');
+}
+
+async function handleForgotPassword() {
+    const email = document.getElementById('forgotEmail').value.trim();
+    
+    if (!email || !email.includes('@') || !email.includes('.')) {
+        showToast('Please enter a valid email address', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            closeModal('forgotPasswordModal');
+            showToast('✅ Reset link sent! Check your email.', 'success');
+        } else {
+            showToast(data.message || 'Failed to send reset email', 'error');
+        }
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        // If backend is unavailable, show a friendly message
+        showToast('Service temporarily unavailable. Please try again later.', 'error');
+    }
+}
+
+async function handleResetPassword() {
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (!newPassword || newPassword.length < 6) {
+        showToast('Password must be at least 6 characters', 'error');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        showToast('Passwords do not match', 'error');
+        return;
+    }
+    
+    if (!resetToken) {
+        showToast('Invalid reset link. Please request a new one.', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: resetToken, newPassword })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            closeModal('resetPasswordModal');
+            resetToken = null;
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            showToast('✅ Password reset! Please log in with your new password.', 'success');
+        } else {
+            showToast(data.message || 'Failed to reset password', 'error');
+        }
+    } catch (error) {
+        console.error('Reset password error:', error);
+        showToast('Service temporarily unavailable. Please try again later.', 'error');
+    }
+}
+
+function checkForResetToken() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('resetToken');
+    
+    if (token) {
+        resetToken = token;
+        openModal('resetPasswordModal');
+        // Clean the URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
 
 // ============================================================
 // GLOBAL FUNCTION EXPORTS
@@ -1627,3 +1726,6 @@ window.initiateYearlyPayment = initiateYearlyPayment;
 window.testRazorpayIntegration = testRazorpayIntegration;
 window.checkAndUpdatePremiumStatus = checkAndUpdatePremiumStatus;
 window.sendContactMessage = sendContactMessage;
+window.openForgotPasswordModal = openForgotPasswordModal;
+window.handleForgotPassword = handleForgotPassword;
+window.handleResetPassword = handleResetPassword;
